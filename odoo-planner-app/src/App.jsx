@@ -106,6 +106,19 @@ function App() {
     }
   };
 
+  // Helper function to add days to a date and format for Odoo
+  const addDays = (dateString, days) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+  };
+
+  // Helper function to add weeks to a date
+  const addWeeks = (dateString, weeks) => {
+    return addDays(dateString, weeks * 7);
+  };
+
   const generateProjectPlan = () => {
     setIsGenerating(true);
 
@@ -122,6 +135,10 @@ function App() {
       };
 
       let taskId = 1;
+      const projectStartDate = responses.project_start_date || new Date().toISOString().split('T')[0];
+
+      // Calculate phase end dates for sequencing
+      const clarityEndDate = addWeeks(projectStartDate, 4); // 4 weeks for Clarity
 
       // Add Clarity Phase tasks (using improved structure)
       if (responses.clarity_phase) {
@@ -132,6 +149,10 @@ function App() {
         const language = responses.language || 'English';
 
         clarityTasks.forEach(task => {
+          // Calculate start and due dates based on week
+          const weekStart = addWeeks(projectStartDate, task.week - 1);
+          const weekEnd = addWeeks(projectStartDate, task.week);
+
           plan.tasks.push({
             id: taskId++,
             title: language === 'Spanish' ? task.name_es : task.name,
@@ -143,7 +164,8 @@ function App() {
             phase: 'Clarity',
             assignee: responses.project_manager || '',
             stage: 'New',
-            deadline: '',
+            start_date: weekStart,
+            deadline: weekEnd,
             milestone: `Clarity Phase - Week ${task.week}`,
             parent_task: '',
             task_type: task.task_type || 'native',
@@ -158,7 +180,14 @@ function App() {
         const selectedModules = responses.modules;
         const language = responses.language || 'English';
 
-        selectedModules.forEach(moduleName => {
+        // Calculate implementation duration (assume 40h/week per FTE)
+        const implementationWeeks = Math.ceil(implementationHours / 40);
+        const implementationEndDate = addWeeks(clarityEndDate, implementationWeeks);
+
+        let currentImplDate = clarityEndDate;
+        const daysPerTask = Math.ceil((implementationWeeks * 7) / (selectedModules.length * 5)); // Rough estimate
+
+        selectedModules.forEach((moduleName, moduleIndex) => {
           const moduleData = taskLibrary.modules[moduleName];
           if (!moduleData) return;
 
@@ -170,7 +199,11 @@ function App() {
                              (implementationHours / selectedModules.length);
           const hourMultiplier = moduleHours > 0 ? moduleHours / totalEstimatedHours : 1;
 
-          moduleTasks.forEach(task => {
+          moduleTasks.forEach((task, taskIndex) => {
+            const taskStart = currentImplDate;
+            const taskDuration = Math.max(7, Math.ceil((task.estimated_hours * hourMultiplier) / 8)); // Days (8h/day)
+            const taskEnd = addDays(taskStart, taskDuration);
+
             plan.tasks.push({
               id: taskId++,
               title: task.name,
@@ -183,12 +216,18 @@ function App() {
               module: moduleName,
               assignee: responses.project_manager || '',
               stage: 'New',
-              deadline: '',
+              start_date: taskStart,
+              deadline: taskEnd,
               milestone: `${moduleName} Implementation`,
               parent_task: '',
               odoo_feature: task.odoo_feature || '',
               task_type: 'native'
             });
+
+            // Advance date for next task (but not too aggressively)
+            if (taskIndex % 2 === 0) {
+              currentImplDate = addDays(currentImplDate, Math.ceil(taskDuration / 2));
+            }
           });
         });
 
@@ -196,6 +235,7 @@ function App() {
         if (responses.customizations === 'Yes') {
           const customTasks = customDevTemplate.custom_development.tasks;
           const customizationScope = responses.customization_scope || '';
+          let customDevDate = currentImplDate;
 
           customTasks.forEach(task => {
             // Adjust hours for main development task based on scope
@@ -204,6 +244,9 @@ function App() {
               // Estimate based on complexity (simple heuristic)
               hours = Math.min(80, Math.max(20, Math.round(customizationScope.length / 5)));
             }
+
+            const taskDuration = Math.max(7, Math.ceil(hours / 8)); // Days (8h/day)
+            const taskEnd = addDays(customDevDate, taskDuration);
 
             plan.tasks.push({
               id: taskId++,
@@ -217,11 +260,14 @@ function App() {
               module: 'Custom Development',
               assignee: responses.project_manager || '',
               stage: 'New',
-              deadline: '',
+              start_date: customDevDate,
+              deadline: taskEnd,
               milestone: 'Custom Development',
               parent_task: '',
               task_type: 'custom' // Mark as custom
             });
+
+            customDevDate = taskEnd; // Sequence custom tasks
           });
         }
       }
@@ -232,11 +278,22 @@ function App() {
         const adoptionDurationMonths = parseInt(responses.adoption_duration_months || 2);
         const language = responses.language || 'English';
 
+        // Adoption starts 2 weeks before implementation ends (for training prep)
+        const implementationHours = parseFloat(responses.implementation_hours || 0);
+        const implementationWeeks = Math.ceil(implementationHours / 40);
+        const implementationEndDate = addWeeks(clarityEndDate, implementationWeeks);
+        const adoptionStartDate = addWeeks(implementationEndDate, -2); // Start 2 weeks before go-live
+        const goLiveDate = implementationEndDate;
+
         // Add core adoption tasks
         const coreTasks = adoptionPhaseImproved.adoption_phase.standard_tasks;
         const coreTasksHours = coreTasks.reduce((sum, t) => sum + t.estimated_hours, 0);
+        let adoptionDate = adoptionStartDate;
 
-        coreTasks.forEach(task => {
+        coreTasks.forEach((task, index) => {
+          const taskDuration = Math.max(7, Math.ceil(task.estimated_hours / 8)); // Days
+          const taskEnd = addDays(adoptionDate, taskDuration);
+
           plan.tasks.push({
             id: taskId++,
             title: language === 'Spanish' ? task.name_es : task.name,
@@ -248,11 +305,19 @@ function App() {
             phase: 'Adoption',
             assignee: responses.project_manager || '',
             stage: 'New',
-            deadline: '',
+            start_date: adoptionDate,
+            deadline: taskEnd,
             milestone: 'Adoption Phase',
             parent_task: '',
             task_type: task.task_type || 'native'
           });
+
+          // Space out tasks, but keep go-live tasks near go-live date
+          if (index < coreTasks.length - 3) {
+            adoptionDate = addDays(adoptionDate, Math.ceil(taskDuration / 2));
+          } else {
+            adoptionDate = taskEnd;
+          }
         });
 
         // Add dynamic monthly support tasks
@@ -261,6 +326,9 @@ function App() {
           const monthlyHours = Math.round(remainingHours / adoptionDurationMonths);
 
           for (let month = 1; month <= adoptionDurationMonths; month++) {
+            const monthStart = addWeeks(goLiveDate, (month - 1) * 4);
+            const monthEnd = addWeeks(goLiveDate, month * 4);
+
             plan.tasks.push({
               id: taskId++,
               title: language === 'Spanish'
@@ -276,7 +344,8 @@ function App() {
               phase: 'Adoption',
               assignee: responses.project_manager || '',
               stage: 'New',
-              deadline: '',
+              start_date: monthStart,
+              deadline: monthEnd,
               milestone: `Adoption - Month ${month}`,
               parent_task: '',
               task_type: 'native'
