@@ -841,6 +841,77 @@ function App() {
             </div>
           </div>
 
+          {/* Executive Milestones Table */}
+          <div className="mb-8 bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-indigo-600 text-white px-6 py-4">
+              <h2 className="text-2xl font-bold">Project Milestones</h2>
+              <p className="text-indigo-100">Key deliverables and dates</p>
+            </div>
+            <div className="p-6">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Milestone</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Start Date</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Due Date</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Deliverables</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {(() => {
+                    const projectStartDate = responses.project_start_date || new Date().toISOString().split('T')[0];
+                    const clarityEnd = addWeeks(projectStartDate, 4);
+
+                    const implementationHours = parseFloat(responses.implementation_hours || 0);
+                    const implementationWeeks = Math.ceil(implementationHours / 40);
+                    const implementationEnd = addWeeks(clarityEnd, implementationWeeks);
+
+                    const adoptionMonths = parseInt(responses.adoption_duration_months || 2);
+                    const adoptionEnd = addWeeks(implementationEnd, adoptionMonths * 4);
+
+                    const milestones = [
+                      {
+                        name: 'Clarity Phase Complete',
+                        start: projectStartDate,
+                        end: clarityEnd,
+                        deliverables: 'Process To-Be, Master of Implementation, Solution Design'
+                      },
+                      {
+                        name: 'Implementation Phase Complete',
+                        start: clarityEnd,
+                        end: implementationEnd,
+                        deliverables: 'Configured Odoo system, Migrated data, Integrations'
+                      },
+                      {
+                        name: 'Go-Live',
+                        start: implementationEnd,
+                        end: implementationEnd,
+                        deliverables: 'Production system launch, Initial support'
+                      },
+                      {
+                        name: 'Adoption Complete',
+                        start: implementationEnd,
+                        end: adoptionEnd,
+                        deliverables: 'Trained users, Knowledge base, Project closure'
+                      }
+                    ];
+
+                    return milestones.map((milestone, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-gray-900">{milestone.name}</div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{milestone.start}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 font-semibold">{milestone.end}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{milestone.deliverables}</td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {Object.keys(tasksByPhase).map(phase => (
             <div key={phase} className="mb-8">
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
