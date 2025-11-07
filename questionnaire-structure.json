@@ -60,9 +60,16 @@
         {
           "id": "project_manager",
           "question": "Arkode Project Manager",
-          "type": "text",
+          "type": "select",
           "required": false,
-          "placeholder": "e.g., Luis Muñoz"
+          "options": [
+            "Luis Muñoz",
+            "Ricardo Gomez",
+            "Andres Solorzano",
+            "Josue Torres",
+            "Jose Ruvalcaba"
+          ],
+          "help_text": "Select the project manager from your team"
         },
         {
           "id": "team_members",

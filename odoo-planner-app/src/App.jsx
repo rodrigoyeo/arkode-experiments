@@ -22,6 +22,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showAllModules, setShowAllModules] = useState(false);
+  const [deletedTaskIds, setDeletedTaskIds] = useState(new Set());
 
   // Get visible sections based on previous answers
   const getVisibleSections = () => {
@@ -657,11 +658,28 @@ function App() {
     }
   };
 
+  // Handler to delete a task
+  const handleDeleteTask = (taskId) => {
+    const newDeleted = new Set(deletedTaskIds);
+    newDeleted.add(taskId);
+    setDeletedTaskIds(newDeleted);
+  };
+
+  // Handler to restore a deleted task
+  const handleRestoreTask = (taskId) => {
+    const newDeleted = new Set(deletedTaskIds);
+    newDeleted.delete(taskId);
+    setDeletedTaskIds(newDeleted);
+  };
+
   const exportToCSV = () => {
     if (!generatedPlan) return;
 
+    // Filter out deleted tasks before exporting
+    const activeTasks = generatedPlan.tasks.filter(task => !deletedTaskIds.has(task.id));
+
     // Prepare CSV data in Odoo format
-    const csvData = generatedPlan.tasks.map(task => {
+    const csvData = activeTasks.map(task => {
       // Add task_type to tags
       let taskTags = Array.isArray(task.tags) ? [...task.tags] : (task.tags ? [task.tags] : []);
       const typeTag = task.task_type === 'custom' ? 'Custom'
@@ -937,7 +955,7 @@ function App() {
                 max="10"
                 className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">Custom modules beyond standard Odoo (e.g., I+D module, special workflows)</p>
+              <p className="text-xs text-gray-500 mt-1">⚠️ Enter MODULE NAMES (e.g., "Backlog Facturación", "Workflow Aprobaciones"), NOT team member names!</p>
             </div>
 
             {/* Custom module cards - matching EXACT style of standard modules */}
@@ -959,10 +977,10 @@ function App() {
                         type="text"
                         value={moduleName}
                         onChange={(e) => handleResponseChange(nameField, e.target.value)}
-                        placeholder={`Custom Module ${num}`}
+                        placeholder={`e.g., Backlog Facturación`}
                         className="w-full px-0 py-0 text-sm font-semibold bg-transparent text-white placeholder-orange-200 border-none focus:ring-0 focus:outline-none mb-1"
                       />
-                      <div className="text-xs text-orange-100 mb-2">Custom development</div>
+                      <div className="text-xs text-orange-100 mb-2">⚠️ Module name (NOT team member)</div>
 
                       {/* Hour input section - same as standard modules */}
                       <div className="mt-2 pt-2 border-t border-orange-400">
@@ -1458,13 +1476,17 @@ function App() {
 
   // Plan Display Screen
   if (step === 'plan' && generatedPlan) {
-    const tasksByPhase = generatedPlan.tasks.reduce((acc, task) => {
+    // Filter out deleted tasks
+    const activeTasks = generatedPlan.tasks.filter(task => !deletedTaskIds.has(task.id));
+
+    const tasksByPhase = activeTasks.reduce((acc, task) => {
       if (!acc[task.phase]) acc[task.phase] = [];
       acc[task.phase].push(task);
       return acc;
     }, {});
 
-    const totalHours = generatedPlan.tasks.reduce((sum, task) => sum + (task.allocated_hours || 0), 0);
+    const totalHours = activeTasks.reduce((sum, task) => sum + (task.allocated_hours || 0), 0);
+    const deletedCount = deletedTaskIds.size;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-8">
@@ -1472,7 +1494,10 @@ function App() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{generatedPlan.project_info.name}</h1>
-              <p className="text-gray-600">{generatedPlan.tasks.length} tasks | {totalHours.toFixed(1)} total hours</p>
+              <p className="text-gray-600">
+                {activeTasks.length} tasks | {totalHours.toFixed(1)} total hours
+                {deletedCount > 0 && <span className="text-red-600 ml-2">({deletedCount} deleted)</span>}
+              </p>
             </div>
 
             <div className="flex gap-3">
@@ -1693,6 +1718,7 @@ function App() {
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-20">Hours</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Priority</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tags</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-20">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1731,6 +1757,17 @@ function App() {
                           </td>
                           <td className="px-4 py-3 text-xs text-gray-600">
                             {Array.isArray(task.tags) ? task.tags.join(', ') : task.tags}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete task (won't be exported to CSV)"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </td>
                         </tr>
                       ))}
