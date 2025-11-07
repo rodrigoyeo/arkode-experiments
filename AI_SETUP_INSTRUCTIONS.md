@@ -3,6 +3,12 @@
 ## Overview
 The Odoo Implementation Planner can now use AI to generate context-specific tasks based on your questionnaire responses. This feature is **optional** but highly recommended.
 
+**You can choose between:**
+- **Claude API** (Anthropic) - Claude 3.5 Sonnet
+- **OpenAI API** - GPT-4 Turbo
+
+Both work equally well - use whichever you prefer or already have credits for!
+
 ## What It Does
 Instead of only using hardcoded templates, the AI:
 - Analyzes your industry, pain points, current systems, and business processes
@@ -19,7 +25,7 @@ Instead of only using hardcoded templates, the AI:
 
 No setup needed! Just check the "Enable AI Task Customization" box in the questionnaire.
 
-### Option 2: Use Your Own Claude API Key
+### Option 2A: Use Claude API Key
 
 1. **Get a Claude API Key:**
    - Go to https://console.anthropic.com/
@@ -43,6 +49,47 @@ No setup needed! Just check the "Enable AI Task Customization" box in the questi
    npm run dev
    ```
 
+### Option 2B: Use OpenAI API Key
+
+1. **Get an OpenAI API Key:**
+   - Go to https://platform.openai.com/api-keys
+   - Sign up or log in
+   - Create an API key
+   - Copy the key (starts with `sk-`)
+
+2. **Add Key to Environment:**
+   ```bash
+   cd odoo-planner-app
+   cp .env.example .env
+   ```
+
+3. **Edit .env file:**
+   ```
+   VITE_OPENAI_API_KEY=sk-your_actual_openai_key_here
+   ```
+
+4. **Restart the dev server:**
+   ```bash
+   npm run dev
+   ```
+
+### Which One Should You Choose?
+
+**Claude (Anthropic):**
+- ✅ Excellent at following instructions
+- ✅ Great at JSON formatting
+- ✅ More affordable (~$0.10-0.20 per plan)
+- ✅ Recommended by Arkode
+
+**OpenAI (GPT-4 Turbo):**
+- ✅ Widely used, familiar interface
+- ✅ Strong reasoning capabilities
+- ✅ Good JSON mode support
+- ✅ Slightly higher cost (~$0.15-0.25 per plan)
+
+**Can I use both?**
+Yes! If you provide both keys, Claude will be used by default. You can comment out one to switch providers.
+
 5. **Test It:**
    - Fill out the questionnaire with realistic data
    - Include pain points, current systems, business processes
@@ -51,18 +98,35 @@ No setup needed! Just check the "Enable AI Task Customization" box in the questi
    - Look for tasks with green "AI Generated" badges
 
 ## API Costs
-- Model: Claude 3.5 Sonnet
-- Cost per plan: ~$0.10-0.20 (depending on questionnaire detail)
-- Typical usage: 5-10 plans per day = $1-2/day
 
-**Recommended**: Use Arkode's proxy to share costs across the team.
+### Claude (Anthropic)
+- Model: Claude 3.5 Sonnet
+- Input: ~$3 per million tokens
+- Output: ~$15 per million tokens
+- **Cost per plan: $0.10-0.20**
+- Typical usage: 5-10 plans/day = $1-2/day
+
+### OpenAI
+- Model: GPT-4 Turbo
+- Input: ~$10 per million tokens
+- Output: ~$30 per million tokens
+- **Cost per plan: $0.15-0.25**
+- Typical usage: 5-10 plans/day = $1.50-2.50/day
+
+**Recommended**: Use Arkode's proxy (when available) to share costs across the team.
 
 ## Troubleshooting
 
-### "No Claude API key provided" warning in console
+### "No AI API key provided" warning in console
 - AI customization is disabled
 - App falls back to template-only mode
-- Either add API key or wait for Arkode proxy
+- Either add Claude OR OpenAI API key
+- Or wait for Arkode proxy
+
+### Which provider is being used?
+- Check browser console - it logs: "Using CLAUDE for AI task generation" or "Using OPENAI for AI task generation"
+- If both keys provided, Claude is used by default
+- Comment out VITE_CLAUDE_API_KEY in .env to force OpenAI
 
 ### API errors or timeouts
 - Check API key is correct
