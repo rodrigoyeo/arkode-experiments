@@ -183,7 +183,11 @@ function App() {
         const clarityHours = parseFloat(responses.clarity_hours || 0);
         const clarityTasks = clarityPhaseImproved.clarity_phase.standard_tasks;
         const totalEstimatedHours = clarityTasks.reduce((sum, t) => sum + t.estimated_hours, 0);
-        const hourMultiplier = clarityHours > 0 ? clarityHours / totalEstimatedHours : 1;
+
+        // Reserve 30% of Clarity budget for AI tasks (if AI enabled), 70% for templates
+        const aiReservedPercent = responses.enable_ai_customization !== false ? 0.30 : 0;
+        const templateBudget = clarityHours * (1 - aiReservedPercent);
+        const hourMultiplier = clarityHours > 0 ? templateBudget / totalEstimatedHours : 1;
         const language = responses.language || 'English';
 
         clarityTasks.forEach(task => {
@@ -250,9 +254,7 @@ function App() {
         // Add migration hours if specified
         let migrationHours = 0;
         if (responses.data_migration && responses.data_migration !== 'No') {
-          if (responses.use_detailed_hours && responses.migration_hours) {
-            migrationHours = parseFloat(responses.migration_hours);
-          }
+          migrationHours = parseFloat(responses.migration_hours) || 0;
         }
 
         // Reserve hours for custom development and migration, distribute rest to modules
@@ -391,18 +393,27 @@ function App() {
 
         // Add core adoption tasks
         const coreTasks = adoptionPhaseImproved.adoption_phase.standard_tasks;
-        const coreTasksHours = coreTasks.reduce((sum, t) => sum + t.estimated_hours, 0);
+        const coreTasksEstimatedHours = coreTasks.reduce((sum, t) => sum + t.estimated_hours, 0);
+
+        // Reserve 50% of Adoption budget for AI tasks (if AI enabled), 50% for templates + support
+        const adoptionAiReservedPercent = responses.enable_ai_customization !== false ? 0.50 : 0;
+        const adoptionTemplateBudget = adoptionHours * (1 - adoptionAiReservedPercent);
+
+        // Scale core tasks to fit within template budget (leaving room for monthly support)
+        const coreTasksTargetHours = adoptionTemplateBudget * 0.4; // 40% for core tasks
+        const adoptionHourMultiplier = coreTasksEstimatedHours > 0 ? coreTasksTargetHours / coreTasksEstimatedHours : 1;
         let adoptionDate = adoptionStartDate;
 
         coreTasks.forEach((task, index) => {
-          const taskDuration = Math.max(7, Math.ceil(task.estimated_hours / 8)); // Days
+          const scaledHours = Math.round(task.estimated_hours * adoptionHourMultiplier);
+          const taskDuration = Math.max(7, Math.ceil(scaledHours / 8)); // Days
           const taskEnd = addDays(adoptionDate, taskDuration);
 
           plan.tasks.push({
             id: taskId++,
             title: language === 'Spanish' ? task.name_es : task.name,
             description: language === 'Spanish' ? task.description_es : task.description,
-            allocated_hours: task.estimated_hours, // Core tasks use standard hours
+            allocated_hours: scaledHours,
             priority: task.priority,
             category: task.category,
             tags: task.tags,
@@ -424,8 +435,9 @@ function App() {
           }
         });
 
-        // Add dynamic monthly support tasks
-        const remainingHours = adoptionHours - coreTasksHours;
+        // Add dynamic monthly support tasks - use remaining template budget (60% of template budget)
+        const coreTasksActualHours = coreTasksTargetHours;
+        const remainingHours = adoptionTemplateBudget - coreTasksActualHours;
         if (remainingHours > 0 && adoptionDurationMonths > 0) {
           const monthlyHours = Math.round(remainingHours / adoptionDurationMonths);
 

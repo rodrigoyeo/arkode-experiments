@@ -282,14 +282,105 @@ function buildContext(responses) {
 }
 
 /**
+ * Get example task names based on language
+ */
+function getExamples(language) {
+  const isSpanish = language === 'Spanish' || language === 'Español';
+
+  return {
+    clarity: {
+      name: isSpanish
+        ? "Mapear proceso específico desde [sistema actual]"
+        : "Map specific process from [current system]",
+      description: isSpanish
+        ? "Descripción detallada"
+        : "Detailed description",
+      category: isSpanish
+        ? "Mapeo de Procesos"
+        : "Process Mapping",
+      tags: isSpanish
+        ? ["Claridad", "Descubrimiento"]
+        : ["Clarity", "Discovery"]
+    },
+    migration: {
+      name: isSpanish
+        ? "Migración de datos desde [sistema] a Odoo"
+        : "Data migration from [system] to Odoo",
+      description: isSpanish
+        ? "Plan detallado de migración"
+        : "Detailed migration plan",
+      category: isSpanish
+        ? "Migración de Datos"
+        : "Data Migration",
+      tags: isSpanish
+        ? ["Implementación", "Migración"]
+        : ["Implementation", "Migration"]
+    },
+    customModule: {
+      nameTemplate: (moduleName) => isSpanish
+        ? `${moduleName} - Diseño de estructura de base de datos`
+        : `${moduleName} - Database structure design`,
+      description: isSpanish
+        ? "Diseñar estructura de base de datos con SKU, fabricante, especificaciones"
+        : "Design database structure with SKU, manufacturer, specs",
+      category: isSpanish
+        ? "Desarrollo Personalizado"
+        : "Custom Development",
+      tags: isSpanish
+        ? ["Implementación", "Desarrollo"]
+        : ["Implementation", "Development"],
+      subtasks: (moduleName) => isSpanish ? [
+        `${moduleName} - Diseño de estructura de base de datos`,
+        `${moduleName} - Configuración de campos específicos`,
+        `${moduleName} - Integración con otros módulos`,
+        `${moduleName} - Dashboard de análisis`,
+        `${moduleName} - Testing e integración`
+      ] : [
+        `${moduleName} - Database structure design`,
+        `${moduleName} - Configure specific fields`,
+        `${moduleName} - Integration with other modules`,
+        `${moduleName} - Analysis dashboard`,
+        `${moduleName} - Testing and integration`
+      ]
+    },
+    adoption: {
+      training: isSpanish
+        ? "Capacitación para el equipo de [área]"
+        : "Training for [area] team",
+      changeManagement: isSpanish
+        ? "Taller de gestión del cambio"
+        : "Change management workshop",
+      documentation: isSpanish
+        ? "Creación de documentación y guías"
+        : "Documentation and guide creation",
+      category: isSpanish
+        ? "Capacitación"
+        : "Training",
+      tags: isSpanish
+        ? ["Adopción", "Capacitación"]
+        : ["Adoption", "Training"]
+    }
+  };
+}
+
+/**
  * Build AI prompt based on phase and context
  */
 function buildPrompt(context, phase, language) {
+  const examples = getExamples(language);
+  const isSpanish = language === 'Spanish' || language === 'Español';
+
   const baseInstructions = `You are an expert Odoo implementation consultant at Arkode.
+
+CRITICAL LANGUAGE REQUIREMENT:
+- ALL task names MUST be in ${language} language
+- ALL descriptions MUST be in ${language} language
+- ALL categories MUST be in ${language} language
+- ALL tags MUST be in ${language} language
+- NO mixing of languages - maintain consistency throughout
 
 CRITICAL RULES:
 - Return ONLY a valid JSON object with a "tasks" array - NO other text before or after
-- Tasks must be in ${language} language
 - Estimated hours must be whole numbers only (no decimals)
 - Each task must have: name, description, estimated_hours, priority, category, tags (array)
 
@@ -316,16 +407,16 @@ Focus on:
 
 DO NOT generate generic tasks. Use the specific systems, pain points, and processes mentioned above.
 
-Return format:
+Return format (example in ${language}):
 {
   "tasks": [
     {
-      "name": "Mapear proceso específico desde [sistema actual]",
-      "description": "Detailed description",
+      "name": "${examples.clarity.name}",
+      "description": "${examples.clarity.description}",
       "estimated_hours": 6,
-      "priority": "High",
-      "category": "Process Mapping",
-      "tags": ["Clarity", "Discovery"]
+      "priority": "${isSpanish ? 'Alta' : 'High'}",
+      "category": "${examples.clarity.category}",
+      "tags": ${JSON.stringify(examples.clarity.tags)}
     }
   ]
 }`;
@@ -376,33 +467,29 @@ DO NOT generate tasks for:
 CRITICAL - Task naming requirements:
 - Use the EXACT module names provided above
 - Break down each custom module into 3-5 subtasks
-- Example for "I+D Module":
-  * "Módulo de I+D - Diseño de estructura de base de datos" (16h)
-  * "Módulo de I+D - Configuración de campos específicos" (12h)
-  * "Módulo de I+D - Integración con compras" (20h)
-  * "Módulo de I+D - Dashboard de análisis" (16h)
-  * "Módulo de I+D - Testing e integración" (12h)
+- Example subtask names in ${language}:
+${examples.customModule.subtasks('I+D Module').map((s, i) => `  * "${s}" (${15 + i * 5}h)`).join('\n')}
 
 Each task should be 15-40 hours maximum.
 
-Return format:
+Return format (example in ${language}):
 {
   "tasks": [
     {
-      "name": "Migración de datos desde ASPEL a Odoo",
-      "description": "Detailed migration plan",
+      "name": "${examples.migration.name}",
+      "description": "${examples.migration.description}",
       "estimated_hours": 30,
-      "priority": "High",
-      "category": "Data Migration",
-      "tags": ["Implementation", "Migration", "ASPEL"]
+      "priority": "${isSpanish ? 'Alta' : 'High'}",
+      "category": "${examples.migration.category}",
+      "tags": ${JSON.stringify(examples.migration.tags)}
     },
     {
-      "name": "Módulo de I+D - Diseño de estructura de base de datos",
-      "description": "Design database structure with SKU, manufacturer, specs",
+      "name": "${examples.customModule.nameTemplate('I+D Module')}",
+      "description": "${examples.customModule.description}",
       "estimated_hours": 16,
-      "priority": "High",
-      "category": "Custom Development",
-      "tags": ["Implementation", "I+D", "Database"]
+      "priority": "${isSpanish ? 'Alta' : 'High'}",
+      "category": "${examples.customModule.category}",
+      "tags": ${JSON.stringify(examples.customModule.tags)}
     }
   ]
 }`;
@@ -432,26 +519,26 @@ DO NOT generate tasks for:
 
 Focus on how to TRAIN users on the already-built system, NOT on building new features.
 
-Example of CORRECT Adoption tasks:
-- "Capacitación para equipo de ventas en módulos CRM y Ventas" (8h)
-- "Taller de gestión del cambio para líderes" (4h)
-- "Documentación de procesos y guías de usuario" (6h)
+Example of CORRECT Adoption tasks in ${language}:
+- "${examples.adoption.training.replace('[área]', isSpanish ? 'ventas' : 'sales')}" (8h)
+- "${examples.adoption.changeManagement}" (4h)
+- "${examples.adoption.documentation}" (6h)
 
-Example of WRONG Adoption tasks (these are Implementation!):
-- "Integración de inventario en tiempo real" ❌
-- "Sistema de geolocalización" ❌
-- "Dashboard de rentabilidad" ❌
+Example of WRONG Adoption tasks (these are Implementation phase, not Adoption!):
+- "${isSpanish ? 'Integración de inventario en tiempo real' : 'Real-time inventory integration'}" ❌
+- "${isSpanish ? 'Sistema de geolocalización' : 'Geolocation system'}" ❌
+- "${isSpanish ? 'Dashboard de rentabilidad' : 'Profitability dashboard'}" ❌
 
-Return format:
+Return format (example in ${language}):
 {
   "tasks": [
     {
-      "name": "Capacitación por roles para [grupo de usuarios]",
-      "description": "Training session details",
+      "name": "${examples.adoption.training}",
+      "description": "${isSpanish ? 'Detalles de la sesión de capacitación' : 'Training session details'}",
       "estimated_hours": 8,
-      "priority": "High",
-      "category": "Training",
-      "tags": ["Adoption", "Training"]
+      "priority": "${isSpanish ? 'Alta' : 'High'}",
+      "category": "${examples.adoption.category}",
+      "tags": ${JSON.stringify(examples.adoption.tags)}
     }
   ]
 }`;

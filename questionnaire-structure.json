@@ -71,6 +71,23 @@
           "required": false
         },
         {
+          "id": "project_duration_weeks",
+          "question": "Estimated Project Duration (weeks)",
+          "type": "number",
+          "required": false,
+          "min": 1,
+          "max": 52,
+          "placeholder": "e.g., 16",
+          "help_text": "How many weeks do you have to complete the project?"
+        },
+        {
+          "id": "project_deadline",
+          "question": "Project Deadline (Optional)",
+          "type": "date",
+          "required": false,
+          "help_text": "If you have a hard deadline, specify it here"
+        },
+        {
           "id": "enable_ai_customization",
           "question": "Use AI to customize tasks based on your requirements?",
           "type": "checkbox",
