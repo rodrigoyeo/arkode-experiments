@@ -254,7 +254,9 @@ function App() {
         });
 
         // Add Custom Development tasks if customizations are required
-        if (responses.customizations === 'Yes') {
+        // ONLY if AI customization is disabled (otherwise AI generates custom tasks)
+        if (responses.customizations === 'Yes' && responses.enable_ai_customization === false) {
+          console.log('📦 Using hardcoded custom development template (AI disabled)');
           const customTasks = customDevTemplate.custom_development.tasks;
           const customizationScope = responses.customization_scope || '';
           let customDevDate = currentImplDate;
@@ -291,6 +293,8 @@ function App() {
 
             customDevDate = taskEnd; // Sequence custom tasks
           });
+        } else if (responses.customizations === 'Yes') {
+          console.log('🤖 Skipping hardcoded custom dev template (AI will generate custom tasks)');
         }
       }
 
@@ -974,41 +978,141 @@ function App() {
                 <tbody className="divide-y divide-gray-200">
                   {(() => {
                     const projectStartDate = responses.project_start_date || new Date().toISOString().split('T')[0];
-                    const clarityEnd = addWeeks(projectStartDate, 4);
+                    const language = responses.language || 'English';
 
-                    const implementationHours = parseFloat(responses.implementation_hours || 0);
-                    const implementationWeeks = Math.ceil(implementationHours / 40);
-                    const implementationEnd = addWeeks(clarityEnd, implementationWeeks);
+                    // Build deliverable-based milestones
+                    const milestones = [];
+                    let currentDate = projectStartDate;
 
-                    const adoptionMonths = parseInt(responses.adoption_duration_months || 2);
-                    const adoptionEnd = addWeeks(implementationEnd, adoptionMonths * 4);
+                    // Clarity Phase Milestones
+                    if (responses.clarity_phase) {
+                      // Milestone 1: Mapping the processes (2 weeks)
+                      const mappingEnd = addWeeks(currentDate, 2);
+                      milestones.push({
+                        name: language === 'Spanish' ? 'Mapeo de Procesos' : 'Process Mapping',
+                        name_en: 'Process Mapping',
+                        name_es: 'Mapeo de Procesos',
+                        start: currentDate,
+                        end: mappingEnd,
+                        deliverables: language === 'Spanish'
+                          ? 'Procesos As-Is documentados, Análisis de brechas'
+                          : 'As-Is processes documented, Gap analysis'
+                      });
+                      currentDate = mappingEnd;
 
-                    const milestones = [
-                      {
-                        name: 'Clarity Phase Complete',
-                        start: projectStartDate,
-                        end: clarityEnd,
-                        deliverables: 'Process To-Be, Master of Implementation, Solution Design'
-                      },
-                      {
-                        name: 'Implementation Phase Complete',
-                        start: clarityEnd,
-                        end: implementationEnd,
-                        deliverables: 'Configured Odoo system, Migrated data, Integrations'
-                      },
-                      {
-                        name: 'Go-Live',
-                        start: implementationEnd,
-                        end: implementationEnd,
-                        deliverables: 'Production system launch, Initial support'
-                      },
-                      {
-                        name: 'Adoption Complete',
-                        start: implementationEnd,
-                        end: adoptionEnd,
-                        deliverables: 'Trained users, Knowledge base, Project closure'
+                      // Milestone 2: Findings, Opportunities & TO-BE (1 week)
+                      const toBeEnd = addWeeks(currentDate, 1);
+                      milestones.push({
+                        name: language === 'Spanish' ? 'Hallazgos, Oportunidades y TO-BE' : 'Findings, Opportunities & TO-BE',
+                        name_en: 'Findings, Opportunities & TO-BE',
+                        name_es: 'Hallazgos, Oportunidades y TO-BE',
+                        start: currentDate,
+                        end: toBeEnd,
+                        deliverables: language === 'Spanish'
+                          ? 'Procesos To-Be diseñados, Oportunidades de mejora'
+                          : 'To-Be processes designed, Improvement opportunities'
+                      });
+                      currentDate = toBeEnd;
+
+                      // Milestone 3: Master of Implementation (1 week)
+                      const moiEnd = addWeeks(currentDate, 1);
+                      milestones.push({
+                        name: language === 'Spanish' ? 'Master of Implementation' : 'Master of Implementation',
+                        name_en: 'Master of Implementation',
+                        name_es: 'Master of Implementation',
+                        start: currentDate,
+                        end: moiEnd,
+                        deliverables: language === 'Spanish'
+                          ? 'Prototipo visual de solución Odoo, Aprobación cliente'
+                          : 'Visual Odoo solution prototype, Client approval'
+                      });
+                      currentDate = moiEnd;
+                    }
+
+                    // Implementation Phase Milestones (per module)
+                    if (responses.implementation_phase && responses.modules) {
+                      const selectedModules = responses.modules;
+                      const hoursPerModule = parseFloat(responses.implementation_hours || 0) / (selectedModules.length + 2); // +2 for custom/migration
+
+                      selectedModules.forEach(moduleName => {
+                        const moduleWeeks = Math.ceil(hoursPerModule / 40) || 1;
+                        const moduleEnd = addWeeks(currentDate, moduleWeeks);
+
+                        milestones.push({
+                          name: language === 'Spanish'
+                            ? `Implementación del módulo de ${moduleName}`
+                            : `Implementation of ${moduleName} Module`,
+                          name_en: `Implementation of ${moduleName} Module`,
+                          name_es: `Implementación del módulo de ${moduleName}`,
+                          start: currentDate,
+                          end: moduleEnd,
+                          deliverables: language === 'Spanish'
+                            ? `Configuración de ${moduleName}, Pruebas`
+                            : `${moduleName} configuration, Testing`
+                        });
+
+                        currentDate = moduleEnd;
+                      });
+
+                      // Custom Development Milestone (if needed)
+                      if (responses.customizations === 'Yes') {
+                        const customWeeks = 2; // Estimate
+                        const customEnd = addWeeks(currentDate, customWeeks);
+
+                        milestones.push({
+                          name: language === 'Spanish'
+                            ? 'Implementación de Módulos Personalizados'
+                            : 'Custom Module Implementation',
+                          name_en: 'Custom Module Implementation',
+                          name_es: 'Implementación de Módulos Personalizados',
+                          start: currentDate,
+                          end: customEnd,
+                          deliverables: language === 'Spanish'
+                            ? 'Desarrollo personalizado, Testing e integración'
+                            : 'Custom development, Testing and integration'
+                        });
+
+                        currentDate = customEnd;
                       }
-                    ];
+
+                      // Migration Milestone (if needed)
+                      if (responses.data_migration && responses.data_migration !== 'No') {
+                        const migrationWeeks = 1;
+                        const migrationEnd = addWeeks(currentDate, migrationWeeks);
+
+                        milestones.push({
+                          name: language === 'Spanish' ? 'Migración de Datos' : 'Data Migration',
+                          name_en: 'Data Migration',
+                          name_es: 'Migración de Datos',
+                          start: currentDate,
+                          end: migrationEnd,
+                          deliverables: language === 'Spanish'
+                            ? 'Datos migrados, Validación completa'
+                            : 'Data migrated, Full validation'
+                        });
+
+                        currentDate = migrationEnd;
+                      }
+                    }
+
+                    const implementationEnd = currentDate;
+
+                    // Adoption Phase Milestone
+                    if (responses.adoption_phase) {
+                      const adoptionMonths = parseInt(responses.adoption_duration_months || 2);
+                      const adoptionEnd = addWeeks(currentDate, adoptionMonths * 4);
+
+                      milestones.push({
+                        name: language === 'Spanish' ? 'Capacitación y Go-Live' : 'Training & Go-Live',
+                        name_en: 'Training & Go-Live',
+                        name_es: 'Capacitación y Go-Live',
+                        start: currentDate,
+                        end: adoptionEnd,
+                        deliverables: language === 'Spanish'
+                          ? 'Usuarios capacitados, Sistema en producción, Soporte post-lanzamiento'
+                          : 'Users trained, System in production, Post-launch support'
+                      });
+                    }
 
                     return milestones.map((milestone, index) => (
                       <tr key={index} className="hover:bg-gray-50">

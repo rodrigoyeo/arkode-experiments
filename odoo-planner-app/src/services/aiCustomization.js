@@ -342,6 +342,13 @@ DO NOT generate tasks for:
 - Training or user adoption - that's the Adoption phase
 - Generic setup tasks
 
+CRITICAL - Task naming requirements:
+- Use SPECIFIC module/feature names from the requirements, NOT generic names
+- Extract the actual module name or key feature from "Custom Development Required"
+- Example: If customization says "Módulo de I+D", task name should be "Desarrollo del módulo de I+D - [specific feature]"
+- Example: If migration says "ASPEL (SAE y COI)", task name should be "Migración de datos desde ASPEL SAE y COI"
+- Example: NOT "Desarrollo de módulo personalizado" but "Desarrollo del módulo de I+D para gestión de productos RFID"
+
 Break down custom modules into logical sub-tasks (design, development, testing, integration).
 Each task should be 15-40 hours maximum.
 
@@ -349,12 +356,20 @@ Return format:
 {
   "tasks": [
     {
-      "name": "Migración de datos de [sistema específico]",
+      "name": "Migración de datos desde ASPEL (SAE y COI) a Odoo",
       "description": "Detailed migration plan",
       "estimated_hours": 30,
       "priority": "High",
       "category": "Data Migration",
-      "tags": ["Implementation", "Migration"]
+      "tags": ["Implementation", "Migration", "ASPEL"]
+    },
+    {
+      "name": "Desarrollo del módulo de I+D - Diseño de estructura de base de datos",
+      "description": "Design database structure for R&D module",
+      "estimated_hours": 16,
+      "priority": "High",
+      "category": "Custom Development",
+      "tags": ["Implementation", "I+D", "Database"]
     }
   ]
 }`;
