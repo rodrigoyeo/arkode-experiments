@@ -128,16 +128,6 @@
           "help_text": "Odoo configuration, data migration, customization"
         },
         {
-          "id": "implementation_hours",
-          "question": "→ Implementation Phase Hours",
-          "type": "number",
-          "required": false,
-          "conditional": "implementation_phase === true",
-          "min": 0,
-          "placeholder": "e.g., 165",
-          "help_text": "Total hours for implementation"
-        },
-        {
           "id": "modules",
           "question": "→ Modules to Implement",
           "type": "multiselect",
@@ -162,6 +152,32 @@
           "show_more_threshold": 8
         },
         {
+          "id": "custom_modules_visual",
+          "question": "→ Custom Modules",
+          "type": "custom_modules",
+          "required": false,
+          "conditional": "implementation_phase === true"
+        },
+        {
+          "id": "data_migration",
+          "question": "→ Data Migration",
+          "type": "select",
+          "required": false,
+          "conditional": "implementation_phase === true",
+          "options": ["No", "Partial", "Full"],
+          "default": "No"
+        },
+        {
+          "id": "migration_hours",
+          "question": "   → Migration Hours",
+          "type": "number",
+          "required": false,
+          "conditional": "data_migration !== 'No'",
+          "min": 0,
+          "placeholder": "e.g., 40",
+          "help_text": "Hours for migrating data from legacy systems"
+        },
+        {
           "id": "adoption_phase",
           "question": "Adoption Phase (Training & Support)",
           "type": "checkbox",
@@ -169,14 +185,24 @@
           "help_text": "User training, go-live support, post-launch support"
         },
         {
-          "id": "adoption_hours",
-          "question": "→ Adoption Phase Hours",
+          "id": "training_hours",
+          "question": "→ Training Hours",
           "type": "number",
           "required": false,
           "conditional": "adoption_phase === true",
           "min": 0,
-          "placeholder": "e.g., 40",
-          "help_text": "Total hours for training and support"
+          "placeholder": "e.g., 16",
+          "help_text": "Total hours for user training"
+        },
+        {
+          "id": "support_hours_per_month",
+          "question": "→ Support Hours per Month",
+          "type": "number",
+          "required": false,
+          "conditional": "adoption_phase === true",
+          "min": 0,
+          "placeholder": "e.g., 20",
+          "help_text": "Hours of support per month post-launch"
         },
         {
           "id": "adoption_duration_months",
@@ -190,30 +216,10 @@
           "help_text": "How many months of post-launch support"
         },
         {
-          "id": "custom_modules_visual",
-          "question": "Custom Modules",
-          "type": "custom_modules",
-          "required": false,
-          "conditional": "implementation_phase === true"
-        },
-        {
-          "id": "data_migration",
-          "question": "Data migration required?",
-          "type": "select",
-          "required": false,
-          "conditional": "implementation_phase === true",
-          "options": ["No", "Partial", "Full"],
-          "default": "No"
-        },
-        {
-          "id": "migration_hours",
-          "question": "→ Data Migration Hours",
-          "type": "number",
-          "required": false,
-          "conditional": "data_migration !== 'No'",
-          "min": 0,
-          "placeholder": "e.g., 40",
-          "help_text": "Hours for migrating data from legacy systems"
+          "id": "budget_tracker",
+          "question": "Project Budget Summary",
+          "type": "budget_tracker",
+          "required": false
         }
       ]
     },

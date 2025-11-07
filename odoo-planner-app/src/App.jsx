@@ -218,7 +218,29 @@ function App() {
 
       // Add Implementation Phase tasks
       if (responses.implementation_phase && responses.modules?.length > 0) {
-        const implementationHours = parseFloat(responses.implementation_hours || 0);
+        // Calculate Implementation hours from breakdown (modules + custom + migration)
+        const moduleFields = [
+          'module_crm_hours', 'module_sales_hours', 'module_purchase_hours',
+          'module_inventory_hours', 'module_accounting_hours', 'module_projects_hours',
+          'module_fsm_hours', 'module_expenses_hours', 'module_manufacturing_hours',
+          'module_ecommerce_hours', 'module_pos_hours', 'module_hr_hours',
+          'module_payroll_hours', 'module_helpdesk_hours'
+        ];
+
+        let moduleHoursTotal = 0;
+        moduleFields.forEach(field => {
+          moduleHoursTotal += parseFloat(responses[field]) || 0;
+        });
+
+        let customHoursTotal = 0;
+        const customCount = parseInt(responses.custom_modules_count) || 0;
+        for (let i = 1; i <= customCount; i++) {
+          customHoursTotal += parseFloat(responses[`custom_module_${i}_hours`]) || 0;
+        }
+
+        const migrationHoursTotal = parseFloat(responses.migration_hours) || 0;
+        const implementationHours = moduleHoursTotal + customHoursTotal + migrationHoursTotal;
+
         const selectedModules = responses.modules;
         const language = responses.language || 'English';
 
@@ -380,13 +402,33 @@ function App() {
 
       // Add Adoption Phase tasks (using improved structure)
       if (responses.adoption_phase) {
-        const adoptionHours = parseFloat(responses.adoption_hours || 0);
+        // Calculate Adoption hours from breakdown (training + support)
+        const trainingHours = parseFloat(responses.training_hours) || 0;
+        const supportPerMonth = parseFloat(responses.support_hours_per_month) || 0;
         const adoptionDurationMonths = parseInt(responses.adoption_duration_months || 2);
+        const adoptionHours = trainingHours + (supportPerMonth * adoptionDurationMonths);
         const language = responses.language || 'English';
 
         // Adoption starts 2 weeks before implementation ends (for training prep)
-        const implementationHours = parseFloat(responses.implementation_hours || 0);
-        const implementationWeeks = Math.ceil(implementationHours / 40);
+        // Calculate Implementation hours from breakdown for timing purposes
+        const moduleFields = [
+          'module_crm_hours', 'module_sales_hours', 'module_purchase_hours',
+          'module_inventory_hours', 'module_accounting_hours', 'module_projects_hours',
+          'module_fsm_hours', 'module_expenses_hours', 'module_manufacturing_hours',
+          'module_ecommerce_hours', 'module_pos_hours', 'module_hr_hours',
+          'module_payroll_hours', 'module_helpdesk_hours'
+        ];
+        let implementationHoursForTiming = 0;
+        moduleFields.forEach(field => {
+          implementationHoursForTiming += parseFloat(responses[field]) || 0;
+        });
+        const customCount = parseInt(responses.custom_modules_count) || 0;
+        for (let i = 1; i <= customCount; i++) {
+          implementationHoursForTiming += parseFloat(responses[`custom_module_${i}_hours`]) || 0;
+        }
+        implementationHoursForTiming += parseFloat(responses.migration_hours) || 0;
+
+        const implementationWeeks = Math.ceil(implementationHoursForTiming / 40);
         const implementationEndDate = addWeeks(clarityEndDate, implementationWeeks);
         const adoptionStartDate = addWeeks(implementationEndDate, -2); // Start 2 weeks before go-live
         const goLiveDate = implementationEndDate;
@@ -846,7 +888,7 @@ function App() {
               <p className="text-xs text-gray-500 mt-1">Custom modules beyond standard Odoo (e.g., I+D module, special workflows)</p>
             </div>
 
-            {/* Custom module cards - matching the style of standard modules */}
+            {/* Custom module cards - matching EXACT style of standard modules */}
             {customModulesCount > 0 && (
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {Array.from({ length: customModulesCount }, (_, i) => i + 1).map(num => {
@@ -858,32 +900,131 @@ function App() {
                   return (
                     <div
                       key={num}
-                      className="p-3 rounded-lg border-2 border-purple-600 bg-orange-50"
+                      className="p-3 rounded-lg border-2 bg-orange-600 text-white border-orange-600"
                     >
-                      <div className="font-semibold text-sm text-gray-900 mb-2">
-                        Custom Module {num}
-                      </div>
+                      {/* Module name input - looks like module label */}
                       <input
                         type="text"
                         value={moduleName}
                         onChange={(e) => handleResponseChange(nameField, e.target.value)}
-                        placeholder="Module name"
-                        className="w-full px-2 py-1 text-sm rounded border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-2"
+                        placeholder={`Custom Module ${num}`}
+                        className="w-full px-0 py-0 text-sm font-semibold bg-transparent text-white placeholder-orange-200 border-none focus:ring-0 focus:outline-none mb-1"
                       />
-                      <input
-                        type="number"
-                        value={moduleHours}
-                        onChange={(e) => handleResponseChange(hoursField, e.target.value)}
-                        placeholder="Hours"
-                        min="0"
-                        className="w-full px-2 py-1 text-sm rounded border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                      <div className="text-xs text-gray-600 mt-1">Allocated hours</div>
+                      <div className="text-xs text-orange-100 mb-2">Custom development</div>
+
+                      {/* Hour input section - same as standard modules */}
+                      <div className="mt-2 pt-2 border-t border-orange-400">
+                        <input
+                          type="number"
+                          value={moduleHours}
+                          onChange={(e) => handleResponseChange(hoursField, e.target.value)}
+                          placeholder="Hours"
+                          min="0"
+                          className="w-full px-2 py-1 text-sm rounded border border-orange-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                        <div className="text-xs text-orange-100 mt-1">Allocated hours</div>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
+          </div>
+        );
+
+      case 'budget_tracker':
+        // Calculate all phase hours
+        const clarityHours = parseFloat(responses.clarity_hours) || 0;
+
+        // Calculate Implementation hours from modules + custom + migration
+        const moduleFields = [
+          'module_crm_hours', 'module_sales_hours', 'module_purchase_hours',
+          'module_inventory_hours', 'module_accounting_hours', 'module_projects_hours',
+          'module_fsm_hours', 'module_expenses_hours', 'module_manufacturing_hours',
+          'module_ecommerce_hours', 'module_pos_hours', 'module_hr_hours',
+          'module_payroll_hours', 'module_helpdesk_hours'
+        ];
+
+        let moduleHours = 0;
+        moduleFields.forEach(field => {
+          moduleHours += parseFloat(responses[field]) || 0;
+        });
+
+        let customHours = 0;
+        const customCount = parseInt(responses.custom_modules_count) || 0;
+        for (let i = 1; i <= customCount; i++) {
+          customHours += parseFloat(responses[`custom_module_${i}_hours`]) || 0;
+        }
+
+        const migrationHours = parseFloat(responses.migration_hours) || 0;
+        const implementationHours = moduleHours + customHours + migrationHours;
+
+        // Calculate Adoption hours from training + (support/month × months)
+        const trainingHours = parseFloat(responses.training_hours) || 0;
+        const supportPerMonth = parseFloat(responses.support_hours_per_month) || 0;
+        const supportMonths = parseInt(responses.adoption_duration_months) || 0;
+        const adoptionHours = trainingHours + (supportPerMonth * supportMonths);
+
+        const totalProjectHours = clarityHours + implementationHours + adoptionHours;
+
+        return (
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-300 rounded-lg p-6 mt-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-blue-600" />
+              {question.question}
+            </h3>
+
+            <div className="space-y-4">
+              {/* Clarity Phase */}
+              {responses.clarity_phase && (
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="flex justify-between items-center">
+                    <div className="font-semibold text-gray-900">Clarity Phase</div>
+                    <div className="text-2xl font-bold text-blue-600">{clarityHours}h</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Discovery & requirements</div>
+                </div>
+              )}
+
+              {/* Implementation Phase */}
+              {responses.implementation_phase && (
+                <div className="bg-white rounded-lg p-4 border border-purple-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="font-semibold text-gray-900">Implementation Phase</div>
+                    <div className="text-2xl font-bold text-purple-600">{implementationHours}h</div>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {moduleHours > 0 && <div>• Odoo Modules: {moduleHours}h</div>}
+                    {customHours > 0 && <div>• Custom Modules: {customHours}h</div>}
+                    {migrationHours > 0 && <div>• Data Migration: {migrationHours}h</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Adoption Phase */}
+              {responses.adoption_phase && (
+                <div className="bg-white rounded-lg p-4 border border-green-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="font-semibold text-gray-900">Adoption Phase</div>
+                    <div className="text-2xl font-bold text-green-600">{adoptionHours}h</div>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {trainingHours > 0 && <div>• Training: {trainingHours}h</div>}
+                    {(supportPerMonth > 0 && supportMonths > 0) && (
+                      <div>• Support: {supportPerMonth}h/month × {supportMonths} months = {supportPerMonth * supportMonths}h</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-4 text-white">
+                <div className="flex justify-between items-center">
+                  <div className="text-lg font-bold">Total Project Hours</div>
+                  <div className="text-3xl font-bold">{totalProjectHours}h</div>
+                </div>
+              </div>
+            </div>
           </div>
         );
 
@@ -1177,18 +1318,46 @@ function App() {
                       <span className="font-semibold">{responses.clarity_hours || 0} hours</span>
                     </div>
                   )}
-                  {responses.implementation_phase && (
-                    <div className="flex justify-between">
-                      <span>✓ Implementation Phase</span>
-                      <span className="font-semibold">{responses.implementation_hours || 0} hours</span>
-                    </div>
-                  )}
-                  {responses.adoption_phase && (
-                    <div className="flex justify-between">
-                      <span>✓ Adoption Phase</span>
-                      <span className="font-semibold">{responses.adoption_hours || 0} hours</span>
-                    </div>
-                  )}
+                  {responses.implementation_phase && (() => {
+                    // Calculate Implementation hours from breakdown
+                    const moduleFields = [
+                      'module_crm_hours', 'module_sales_hours', 'module_purchase_hours',
+                      'module_inventory_hours', 'module_accounting_hours', 'module_projects_hours',
+                      'module_fsm_hours', 'module_expenses_hours', 'module_manufacturing_hours',
+                      'module_ecommerce_hours', 'module_pos_hours', 'module_hr_hours',
+                      'module_payroll_hours', 'module_helpdesk_hours'
+                    ];
+                    let implementationHours = 0;
+                    moduleFields.forEach(field => {
+                      implementationHours += parseFloat(responses[field]) || 0;
+                    });
+                    const customCount = parseInt(responses.custom_modules_count) || 0;
+                    for (let i = 1; i <= customCount; i++) {
+                      implementationHours += parseFloat(responses[`custom_module_${i}_hours`]) || 0;
+                    }
+                    implementationHours += parseFloat(responses.migration_hours) || 0;
+
+                    return (
+                      <div className="flex justify-between">
+                        <span>✓ Implementation Phase</span>
+                        <span className="font-semibold">{implementationHours} hours</span>
+                      </div>
+                    );
+                  })()}
+                  {responses.adoption_phase && (() => {
+                    // Calculate Adoption hours from breakdown
+                    const trainingHours = parseFloat(responses.training_hours) || 0;
+                    const supportPerMonth = parseFloat(responses.support_hours_per_month) || 0;
+                    const supportMonths = parseInt(responses.adoption_duration_months) || 0;
+                    const adoptionHours = trainingHours + (supportPerMonth * supportMonths);
+
+                    return (
+                      <div className="flex justify-between">
+                        <span>✓ Adoption Phase</span>
+                        <span className="font-semibold">{adoptionHours} hours</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
