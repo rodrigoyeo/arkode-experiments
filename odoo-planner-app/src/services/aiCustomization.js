@@ -231,6 +231,17 @@ function extractTasksFromJSON(text) {
  * Build context object from questionnaire responses
  */
 function buildContext(responses) {
+  // Build custom modules array
+  const customModules = [];
+  const customModulesCount = parseInt(responses.custom_modules_count) || 0;
+  for (let i = 1; i <= customModulesCount; i++) {
+    const name = responses[`custom_module_${i}_name`];
+    const hours = responses[`custom_module_${i}_hours`];
+    if (name) {
+      customModules.push({ name, hours: parseInt(hours) || 0 });
+    }
+  }
+
   return {
     // Project basics
     industry: responses.industry || 'General',
@@ -241,6 +252,10 @@ function buildContext(responses) {
     clarity_hours: responses.clarity_hours || 40,
     implementation_hours: responses.implementation_hours || 100,
     adoption_hours: responses.adoption_hours || 20,
+
+    // Custom modules
+    custom_modules: customModules,
+    custom_modules_count: customModulesCount,
 
     // Clarity phase context
     current_systems: responses.current_systems || '',
@@ -253,7 +268,6 @@ function buildContext(responses) {
     data_migration_scope: responses.data_migration_scope || '',
     integrations: responses.integrations || 'No',
     integration_list: responses.integration_list || '',
-    customizations: responses.customizations || 'No',
     customization_scope: responses.customization_scope || '',
     multi_company: responses.multi_company || 'No',
     company_count: responses.company_count || 1,
@@ -321,20 +335,37 @@ Return format:
     // Calculate available hours for AI tasks (custom dev portion)
     const customDevBudget = Math.round(context.implementation_hours * 0.5); // 50% for custom work
 
+    // Build custom modules description
+    let customModulesDescription = 'None';
+    if (context.custom_modules && context.custom_modules.length > 0) {
+      customModulesDescription = context.custom_modules.map((mod, idx) =>
+        `${idx + 1}. ${mod.name} (${mod.hours}h allocated)`
+      ).join('\n');
+
+      if (context.customization_scope) {
+        customModulesDescription += '\n\nDetailed Requirements:\n' + context.customization_scope;
+      }
+    } else if (context.customization_scope) {
+      customModulesDescription = context.customization_scope;
+    }
+
     return `${baseInstructions}
-Data Migration Scope: ${context.data_migration_scope}
+Data Migration Scope: ${context.data_migration_scope || 'None'}
 Integration Requirements: ${context.integration_list || 'None'}
-Custom Development Required: ${context.customization_scope}
+
+Custom Modules to Develop:
+${customModulesDescription}
+
 Multi-company: ${context.multi_company} ${context.multi_company === 'Yes' ? `(${context.company_count} companies)` : ''}
 Multi-warehouse: ${context.multi_warehouse} ${context.multi_warehouse === 'Yes' ? `(${context.warehouse_count} warehouses)` : ''}
 
-TASK: Generate 2-4 specific Implementation tasks for DATA MIGRATION and CUSTOM DEVELOPMENT only.
+TASK: Generate specific Implementation tasks for DATA MIGRATION and CUSTOM MODULES.
 
 BUDGET CONSTRAINT: Total hours for ALL tasks must NOT exceed ${customDevBudget} hours.
 
 IMPORTANT - Generate tasks ONLY for:
 1. Data migration from systems mentioned (if scope provided)
-2. Custom module development described in "Custom Development Required" section
+2. Custom modules listed above - break down each module into subtasks
 3. Third-party integrations listed (if any)
 
 DO NOT generate tasks for:
@@ -343,20 +374,22 @@ DO NOT generate tasks for:
 - Generic setup tasks
 
 CRITICAL - Task naming requirements:
-- Use SPECIFIC module/feature names from the requirements, NOT generic names
-- Extract the actual module name or key feature from "Custom Development Required"
-- Example: If customization says "Módulo de I+D", task name should be "Desarrollo del módulo de I+D - [specific feature]"
-- Example: If migration says "ASPEL (SAE y COI)", task name should be "Migración de datos desde ASPEL SAE y COI"
-- Example: NOT "Desarrollo de módulo personalizado" but "Desarrollo del módulo de I+D para gestión de productos RFID"
+- Use the EXACT module names provided above
+- Break down each custom module into 3-5 subtasks
+- Example for "I+D Module":
+  * "Módulo de I+D - Diseño de estructura de base de datos" (16h)
+  * "Módulo de I+D - Configuración de campos específicos" (12h)
+  * "Módulo de I+D - Integración con compras" (20h)
+  * "Módulo de I+D - Dashboard de análisis" (16h)
+  * "Módulo de I+D - Testing e integración" (12h)
 
-Break down custom modules into logical sub-tasks (design, development, testing, integration).
 Each task should be 15-40 hours maximum.
 
 Return format:
 {
   "tasks": [
     {
-      "name": "Migración de datos desde ASPEL (SAE y COI) a Odoo",
+      "name": "Migración de datos desde ASPEL a Odoo",
       "description": "Detailed migration plan",
       "estimated_hours": 30,
       "priority": "High",
@@ -364,8 +397,8 @@ Return format:
       "tags": ["Implementation", "Migration", "ASPEL"]
     },
     {
-      "name": "Desarrollo del módulo de I+D - Diseño de estructura de base de datos",
-      "description": "Design database structure for R&D module",
+      "name": "Módulo de I+D - Diseño de estructura de base de datos",
+      "description": "Design database structure with SKU, manufacturer, specs",
       "estimated_hours": 16,
       "priority": "High",
       "category": "Custom Development",

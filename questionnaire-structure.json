@@ -1,35 +1,33 @@
 {
   "metadata": {
-    "version": "1.0.0",
-    "description": "Questionnaire structure for Odoo Implementation Planner",
+    "version": "2.0.0",
+    "description": "Redesigned questionnaire with improved UX",
     "estimated_completion_time": "10-15 minutes"
   },
 
   "sections": [
     {
       "id": "project_basics",
-      "title": "Project Basics",
-      "description": "General information about the project and client",
+      "title": "Project Information",
+      "description": "Basic details about your project",
       "questions": [
         {
           "id": "project_name",
-          "question": "What is the project/client name?",
+          "question": "Project Name",
           "type": "text",
           "required": true,
-          "placeholder": "e.g., Acme Corp - Odoo Implementation 2025",
-          "help_text": "This will be used as the project name in Odoo"
+          "placeholder": "e.g., EAS Systems - Odoo Implementation 2025"
         },
         {
           "id": "client_name",
-          "question": "Client/Company Name",
+          "question": "Client Company Name",
           "type": "text",
           "required": true,
-          "placeholder": "e.g., Acme Corporation",
-          "help_text": "The legal name of the client company"
+          "placeholder": "e.g., EAS Systems"
         },
         {
           "id": "industry",
-          "question": "What industry is the client in?",
+          "question": "Industry",
           "type": "select",
           "required": false,
           "options": [
@@ -40,712 +38,394 @@
             "Field Services",
             "Construction",
             "Healthcare",
-            "Food & Beverage",
             "Technology/Software",
             "Other"
-          ],
-          "help_text": "Industry context helps tailor implementation recommendations"
-        },
-        {
-          "id": "language",
-          "question": "What language should the task plan be in?",
-          "type": "select",
-          "required": true,
-          "options": ["English", "Spanish"],
-          "default": "English",
-          "help_text": "All task names and descriptions will be in this language"
+          ]
         },
         {
           "id": "country",
-          "question": "What country is the client based in?",
+          "question": "Country",
           "type": "text",
+          "required": false,
+          "placeholder": "e.g., Mexico"
+        },
+        {
+          "id": "language",
+          "question": "Plan Language",
+          "type": "select",
           "required": true,
-          "placeholder": "e.g., Mexico, United States, Colombia",
-          "help_text": "Affects accounting localization and compliance requirements"
+          "default": "English",
+          "options": ["English", "Spanish"]
+        },
+        {
+          "id": "project_manager",
+          "question": "Arkode Project Manager",
+          "type": "text",
+          "required": false,
+          "placeholder": "e.g., Luis Muñoz"
         },
         {
           "id": "project_start_date",
           "question": "Project Start Date",
           "type": "date",
-          "required": true,
-          "help_text": "When the project will officially begin (used for task date calculations)"
-        },
-        {
-          "id": "timeline",
-          "question": "What is the desired project timeline?",
-          "type": "text",
-          "required": true,
-          "placeholder": "e.g., 3 months, Q2 2025",
-          "help_text": "Overall project duration from kickoff to go-live"
-        },
-        {
-          "id": "go_live_date",
-          "question": "Target Go-Live Date",
-          "type": "date",
-          "required": false,
-          "help_text": "Preferred date for production launch (optional)"
-        },
-        {
-          "id": "project_manager",
-          "question": "Who is the Arkode project manager?",
-          "type": "text",
-          "required": true,
-          "placeholder": "e.g., Mitchell Admin",
-          "help_text": "Name of the Arkode consultant leading this project"
-        },
-        {
-          "id": "stakeholders",
-          "question": "Who are the key client stakeholders?",
-          "type": "textarea",
-          "required": false,
-          "placeholder": "e.g., John Doe (CEO), Jane Smith (CFO), Mike Johnson (Operations Manager)",
-          "help_text": "Key decision-makers and their roles"
+          "required": false
         },
         {
           "id": "enable_ai_customization",
-          "question": "Enable AI Task Customization",
+          "question": "Use AI to customize tasks based on your requirements?",
           "type": "checkbox",
           "required": false,
           "default": true,
-          "help_text": "Use AI to generate context-specific tasks based on your industry, pain points, and requirements (recommended)"
+          "help_text": "Recommended: AI generates specific tasks based on your answers"
         }
       ]
     },
 
     {
-      "id": "phases_included",
-      "title": "Project Phases",
-      "description": "Which of Arkode's service phases are included in this project?",
+      "id": "scope_and_hours",
+      "title": "Scope & Hours",
+      "description": "Which phases and how many hours were quoted?",
       "questions": [
         {
           "id": "clarity_phase",
           "question": "Clarity Phase (Discovery & Requirements)",
           "type": "checkbox",
-          "required": false,
           "default": true,
-          "help_text": "Process mapping, gap analysis, and solution design"
+          "help_text": "Process mapping, gap analysis, Master of Implementation"
+        },
+        {
+          "id": "clarity_hours",
+          "question": "→ Clarity Phase Hours",
+          "type": "number",
+          "required": false,
+          "conditional": "clarity_phase === true",
+          "min": 0,
+          "placeholder": "e.g., 65",
+          "help_text": "Total hours for discovery and requirements"
         },
         {
           "id": "implementation_phase",
           "question": "Implementation Phase (Configuration & Setup)",
           "type": "checkbox",
-          "required": false,
           "default": true,
-          "help_text": "Odoo configuration, customization, and data migration"
-        },
-        {
-          "id": "adoption_phase",
-          "question": "Adoption Phase (Training & Change Management)",
-          "type": "checkbox",
-          "required": false,
-          "default": true,
-          "help_text": "User training, go-live support, and ongoing post-launch support"
-        }
-      ]
-    },
-
-    {
-      "id": "hours_allocation",
-      "title": "Hours Allocation",
-      "description": "How many hours were quoted for each phase?",
-      "conditional": "phases_included",
-      "questions": [
-        {
-          "id": "clarity_hours",
-          "question": "Hours quoted for Clarity Phase",
-          "type": "number",
-          "required": false,
-          "conditional": "clarity_phase === true",
-          "min": 0,
-          "placeholder": "e.g., 40",
-          "help_text": "Total hours allocated for discovery and requirements gathering"
+          "help_text": "Odoo configuration, data migration, customization"
         },
         {
           "id": "implementation_hours",
-          "question": "Hours quoted for Implementation Phase",
+          "question": "→ Implementation Phase Hours",
           "type": "number",
           "required": false,
           "conditional": "implementation_phase === true",
           "min": 0,
-          "placeholder": "e.g., 200",
-          "help_text": "Total hours allocated for configuration and setup"
+          "placeholder": "e.g., 165",
+          "help_text": "Total hours for implementation"
+        },
+        {
+          "id": "modules",
+          "question": "→ Modules to Implement",
+          "type": "multiselect",
+          "required": false,
+          "conditional": "implementation_phase === true",
+          "options": [
+            {"value": "CRM", "label": "CRM", "description": "Lead & opportunity management", "popular": true},
+            {"value": "Sales", "label": "Sales", "description": "Quotations and sales orders", "popular": true},
+            {"value": "Purchase", "label": "Purchase", "description": "Purchase orders and vendor management", "popular": true},
+            {"value": "Inventory", "label": "Inventory", "description": "Warehouse and stock management", "popular": true},
+            {"value": "Accounting", "label": "Accounting", "description": "Financial accounting", "popular": true},
+            {"value": "Projects", "label": "Projects", "description": "Project management and timesheets", "popular": true},
+            {"value": "FSM", "label": "Field Service", "description": "Field service management", "popular": true},
+            {"value": "Expenses", "label": "Expenses", "description": "Employee expense management", "popular": true},
+            {"value": "Manufacturing", "label": "Manufacturing", "description": "MRP and production management"},
+            {"value": "eCommerce", "label": "eCommerce", "description": "Online store"},
+            {"value": "POS", "label": "Point of Sale", "description": "Retail POS system"},
+            {"value": "HR", "label": "HR", "description": "Human resources"},
+            {"value": "Payroll", "label": "Payroll", "description": "Payroll processing"},
+            {"value": "Helpdesk", "label": "Helpdesk", "description": "Customer support tickets"}
+          ],
+          "show_more_threshold": 8
+        },
+        {
+          "id": "adoption_phase",
+          "question": "Adoption Phase (Training & Support)",
+          "type": "checkbox",
+          "default": true,
+          "help_text": "User training, go-live support, post-launch support"
         },
         {
           "id": "adoption_hours",
-          "question": "Hours quoted for Adoption Phase",
+          "question": "→ Adoption Phase Hours",
           "type": "number",
           "required": false,
           "conditional": "adoption_phase === true",
           "min": 0,
-          "placeholder": "e.g., 60",
-          "help_text": "Total hours allocated for training and go-live support"
-        }
-      ]
-    },
-
-    {
-      "id": "modules_selection",
-      "title": "Modules & Features",
-      "description": "Which Odoo modules will be implemented?",
-      "questions": [
-        {
-          "id": "modules",
-          "question": "Select all modules to be implemented",
-          "type": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "value": "CRM",
-              "label": "CRM (Customer Relationship Management)",
-              "description": "Lead and opportunity pipeline management",
-              "popular": true
-            },
-            {
-              "value": "Sales",
-              "label": "Sales",
-              "description": "Quotations, sales orders, and invoicing",
-              "popular": true
-            },
-            {
-              "value": "Purchase",
-              "label": "Purchase",
-              "description": "Purchase orders and vendor management",
-              "popular": true
-            },
-            {
-              "value": "Inventory",
-              "label": "Inventory",
-              "description": "Warehouse and stock management",
-              "popular": true
-            },
-            {
-              "value": "Accounting",
-              "label": "Accounting",
-              "description": "Financial accounting and reporting",
-              "popular": true
-            },
-            {
-              "value": "Manufacturing",
-              "label": "Manufacturing (MRP)",
-              "description": "Production planning and shop floor management",
-              "popular": true
-            },
-            {
-              "value": "Projects",
-              "label": "Projects",
-              "description": "Project and task management",
-              "popular": true
-            },
-            {
-              "value": "FSM",
-              "label": "Field Service Management",
-              "description": "On-site service operations",
-              "popular": true
-            },
-            {
-              "value": "eCommerce",
-              "label": "eCommerce",
-              "description": "Online store and product catalog"
-            },
-            {
-              "value": "POS",
-              "label": "Point of Sale (POS)",
-              "description": "Retail point of sale system"
-            },
-            {
-              "value": "Expenses",
-              "label": "Expenses",
-              "description": "Employee expense reporting"
-            },
-            {
-              "value": "Approvals",
-              "label": "Approvals",
-              "description": "Workflow approvals and requests"
-            },
-            {
-              "value": "HR",
-              "label": "Human Resources",
-              "description": "Employee management and records"
-            },
-            {
-              "value": "Payroll",
-              "label": "Payroll",
-              "description": "Salary processing and payslips"
-            },
-            {
-              "value": "Recruitment",
-              "label": "Recruitment",
-              "description": "Job postings and applicant tracking"
-            },
-            {
-              "value": "Timesheets",
-              "label": "Timesheets",
-              "description": "Time tracking and billable hours"
-            },
-            {
-              "value": "Planning",
-              "label": "Planning",
-              "description": "Resource planning and scheduling"
-            },
-            {
-              "value": "Helpdesk",
-              "label": "Helpdesk",
-              "description": "Customer support ticket management"
-            },
-            {
-              "value": "LiveChat",
-              "label": "Live Chat",
-              "description": "Website chat support"
-            },
-            {
-              "value": "EmailMarketing",
-              "label": "Email Marketing",
-              "description": "Email campaigns and automation"
-            },
-            {
-              "value": "SMS",
-              "label": "SMS Marketing",
-              "description": "SMS campaigns and notifications"
-            },
-            {
-              "value": "Subscriptions",
-              "label": "Subscriptions",
-              "description": "Recurring billing and contracts"
-            },
-            {
-              "value": "Rental",
-              "label": "Rental",
-              "description": "Equipment and asset rental management"
-            },
-            {
-              "value": "Maintenance",
-              "label": "Maintenance",
-              "description": "Equipment maintenance requests"
-            },
-            {
-              "value": "Quality",
-              "label": "Quality",
-              "description": "Quality control and inspections"
-            },
-            {
-              "value": "PLM",
-              "label": "PLM (Product Lifecycle Management)",
-              "description": "Product design and engineering changes"
-            },
-            {
-              "value": "Documents",
-              "label": "Documents",
-              "description": "Document management system"
-            },
-            {
-              "value": "Sign",
-              "label": "Sign",
-              "description": "Electronic signature management"
-            },
-            {
-              "value": "Appointments",
-              "label": "Appointments",
-              "description": "Online booking and scheduling"
-            },
-            {
-              "value": "Events",
-              "label": "Events",
-              "description": "Event management and ticketing"
-            }
-          ],
-          "show_more_threshold": 8,
-          "help_text": "Select all modules that were sold to the client. Click 'Show More' to see additional modules."
-        }
-      ]
-    },
-
-    {
-      "id": "detailed_hour_allocation",
-      "title": "Detailed Hour Allocation (Optional - Advanced)",
-      "description": "Specify hours for each module and activity. Leave blank to distribute evenly.",
-      "conditional": "implementation_phase === true",
-      "questions": [
-        {
-          "id": "use_detailed_hours",
-          "question": "Do you want to specify hours per module/activity?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help_text": "Enable this to control exactly how implementation hours are distributed. If disabled, hours will be distributed evenly across selected modules."
+          "placeholder": "e.g., 40",
+          "help_text": "Total hours for training and support"
         },
         {
-          "id": "module_hour_allocation_info",
-          "question": "Allocate Implementation Hours",
-          "type": "info",
-          "conditional": "use_detailed_hours === true",
-          "content": "Specify hours for each component. The sum should equal your Implementation Phase hours."
-        },
-        {
-          "id": "custom_module_hours",
-          "question": "Custom Module Development",
+          "id": "adoption_duration_months",
+          "question": "→ Support Duration (months)",
           "type": "number",
           "required": false,
-          "conditional": "use_detailed_hours === true && customizations === 'Yes'",
+          "conditional": "adoption_phase === true",
+          "min": 1,
+          "default": 2,
+          "placeholder": "e.g., 2",
+          "help_text": "How many months of post-launch support"
+        },
+        {
+          "id": "hour_allocation_section",
+          "question": "Hour Allocation (Optional)",
+          "type": "section_header",
+          "conditional": "implementation_phase === true"
+        },
+        {
+          "id": "custom_modules_count",
+          "question": "How many custom modules do you need?",
+          "type": "number",
+          "required": false,
+          "conditional": "implementation_phase === true",
           "min": 0,
-          "placeholder": "e.g., 80",
-          "help_text": "Hours for custom module development (I+D, specific customizations, etc.)"
+          "max": 10,
+          "default": 0,
+          "placeholder": "e.g., 1",
+          "help_text": "Custom modules beyond standard Odoo (e.g., I+D module, special workflows)"
+        },
+        {
+          "id": "custom_module_1_name",
+          "question": "→ Custom Module 1 Name",
+          "type": "text",
+          "required": false,
+          "conditional": "custom_modules_count >= 1",
+          "placeholder": "e.g., I+D Module"
+        },
+        {
+          "id": "custom_module_1_hours",
+          "question": "→ Custom Module 1 Hours",
+          "type": "number",
+          "required": false,
+          "conditional": "custom_modules_count >= 1",
+          "min": 0,
+          "placeholder": "e.g., 80"
+        },
+        {
+          "id": "custom_module_2_name",
+          "question": "→ Custom Module 2 Name",
+          "type": "text",
+          "required": false,
+          "conditional": "custom_modules_count >= 2",
+          "placeholder": "e.g., Custom Workflow"
+        },
+        {
+          "id": "custom_module_2_hours",
+          "question": "→ Custom Module 2 Hours",
+          "type": "number",
+          "required": false,
+          "conditional": "custom_modules_count >= 2",
+          "min": 0,
+          "placeholder": "e.g., 40"
+        },
+        {
+          "id": "custom_module_3_name",
+          "question": "→ Custom Module 3 Name",
+          "type": "text",
+          "required": false,
+          "conditional": "custom_modules_count >= 3",
+          "placeholder": "e.g., Custom Dashboard"
+        },
+        {
+          "id": "custom_module_3_hours",
+          "question": "→ Custom Module 3 Hours",
+          "type": "number",
+          "required": false,
+          "conditional": "custom_modules_count >= 3",
+          "min": 0,
+          "placeholder": "e.g., 20"
+        },
+        {
+          "id": "data_migration",
+          "question": "Data migration required?",
+          "type": "select",
+          "required": false,
+          "conditional": "implementation_phase === true",
+          "options": ["No", "Partial", "Full"],
+          "default": "No"
         },
         {
           "id": "migration_hours",
-          "question": "Data Migration",
+          "question": "→ Data Migration Hours",
           "type": "number",
           "required": false,
-          "conditional": "use_detailed_hours === true && data_migration !== 'No'",
+          "conditional": "data_migration !== 'No'",
           "min": 0,
           "placeholder": "e.g., 40",
-          "help_text": "Hours for data migration from legacy systems"
-        },
-        {
-          "id": "crm_hours",
-          "question": "CRM Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('CRM')",
-          "min": 0,
-          "placeholder": "e.g., 20"
-        },
-        {
-          "id": "sales_hours",
-          "question": "Sales Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('Sales')",
-          "min": 0,
-          "placeholder": "e.g., 20"
-        },
-        {
-          "id": "purchase_hours",
-          "question": "Purchase Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('Purchase')",
-          "min": 0,
-          "placeholder": "e.g., 10"
-        },
-        {
-          "id": "inventory_hours",
-          "question": "Inventory Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('Inventory')",
-          "min": 0,
-          "placeholder": "e.g., 15"
-        },
-        {
-          "id": "accounting_hours",
-          "question": "Accounting Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('Accounting')",
-          "min": 0,
-          "placeholder": "e.g., 20"
-        },
-        {
-          "id": "projects_hours",
-          "question": "Projects Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('Projects')",
-          "min": 0,
-          "placeholder": "e.g., 15"
-        },
-        {
-          "id": "fsm_hours",
-          "question": "FSM (Field Service) Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('FSM')",
-          "min": 0,
-          "placeholder": "e.g., 15"
-        },
-        {
-          "id": "expenses_hours",
-          "question": "Expenses Module",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && modules.includes('Expenses')",
-          "min": 0,
-          "placeholder": "e.g., 10"
-        },
-        {
-          "id": "adoption_training_hours",
-          "question": "Training (Adoption Phase)",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && adoption_phase === true",
-          "min": 0,
-          "placeholder": "e.g., 8",
-          "help_text": "One-time training hours"
-        },
-        {
-          "id": "adoption_support_hours_monthly",
-          "question": "Monthly Support Hours (Adoption Phase)",
-          "type": "number",
-          "required": false,
-          "conditional": "use_detailed_hours === true && adoption_phase === true",
-          "min": 0,
-          "placeholder": "e.g., 20",
-          "help_text": "Support hours per month during adoption period"
+          "help_text": "Hours for migrating data from legacy systems"
         }
       ]
     },
 
     {
       "id": "clarity_details",
-      "title": "Clarity Phase Details",
-      "description": "Additional information for the Clarity phase",
+      "title": "Discovery & Requirements",
+      "description": "Details for the Clarity phase",
       "conditional": "clarity_phase === true",
       "questions": [
         {
           "id": "current_systems",
-          "question": "What are the client's current systems/tools?",
+          "question": "Current Systems/Tools",
           "type": "textarea",
           "required": false,
-          "placeholder": "e.g., QuickBooks for accounting, Excel for inventory, Salesforce for CRM",
-          "help_text": "List current software and tools being used"
-        },
-        {
-          "id": "core_processes",
-          "question": "What are the client's core business processes?",
-          "type": "textarea",
-          "required": false,
-          "placeholder": "e.g., Quote-to-Cash, Procure-to-Pay, Order-to-Delivery, etc.",
-          "help_text": "Key business processes to be mapped and optimized"
+          "placeholder": "e.g., QuickBooks, Excel, Google Workspace, ASPEL (SAE / COI)",
+          "help_text": "List current software and tools"
         },
         {
           "id": "pain_points",
-          "question": "What are the main pain points or challenges?",
+          "question": "Main Pain Points or Challenges",
           "type": "textarea",
           "required": false,
-          "placeholder": "e.g., Lack of inventory visibility, manual order processing, disconnected systems",
-          "help_text": "Problems the client wants to solve with Odoo"
+          "placeholder": "e.g., Manual processes, no inventory visibility, disconnected systems",
+          "help_text": "Problems to solve with Odoo"
+        },
+        {
+          "id": "core_processes",
+          "question": "Core Business Processes",
+          "type": "textarea",
+          "required": false,
+          "placeholder": "e.g., Quote-to-Cash, Procure-to-Pay, Make-to-Order production",
+          "help_text": "Key business processes to map"
         },
         {
           "id": "workshop_count",
-          "question": "How many workshops/sessions are planned?",
+          "question": "Number of Discovery Workshops",
           "type": "number",
           "required": false,
-          "min": 0,
-          "placeholder": "e.g., 3",
-          "help_text": "Number of discovery workshops with stakeholders"
+          "min": 1,
+          "default": 4,
+          "placeholder": "4"
         }
       ]
     },
 
     {
       "id": "implementation_details",
-      "title": "Implementation Details",
-      "description": "Additional information for the Implementation phase",
+      "title": "Technical Implementation Details",
+      "description": "Additional implementation requirements",
       "conditional": "implementation_phase === true",
       "questions": [
-        {
-          "id": "data_migration",
-          "question": "Is data migration required?",
-          "type": "radio",
-          "required": false,
-          "options": ["Yes", "No", "Partial"],
-          "default": "Yes",
-          "help_text": "Will historical data be migrated to Odoo?"
-        },
         {
           "id": "data_migration_scope",
           "question": "What data needs to be migrated?",
           "type": "textarea",
           "required": false,
           "conditional": "data_migration !== 'No'",
-          "placeholder": "e.g., Customers, vendors, products, opening stock balances, open invoices",
-          "help_text": "List the types of data to migrate"
+          "placeholder": "e.g., Customers, vendors, products, 5 years of financial data from ASPEL",
+          "help_text": "Describe what data to migrate from legacy systems"
         },
         {
           "id": "integrations",
-          "question": "Are there third-party integrations needed?",
-          "type": "radio",
+          "question": "Third-party integrations needed?",
+          "type": "select",
           "required": false,
-          "options": ["Yes", "No"],
-          "default": "No",
-          "help_text": "Does Odoo need to integrate with external systems?"
+          "options": ["No", "Yes"],
+          "default": "No"
         },
         {
           "id": "integration_list",
-          "question": "List the integrations required",
+          "question": "→ List integrations",
           "type": "textarea",
           "required": false,
           "conditional": "integrations === 'Yes'",
-          "placeholder": "e.g., Shopify for e-commerce, Stripe for payments, WhatsApp for notifications",
-          "help_text": "Describe each integration and its purpose"
-        },
-        {
-          "id": "customizations",
-          "question": "Are custom developments required?",
-          "type": "radio",
-          "required": false,
-          "options": ["Yes", "No"],
-          "default": "No",
-          "help_text": "Features beyond standard Odoo functionality"
+          "placeholder": "e.g., Shopify, Stripe, FedEx shipping",
+          "help_text": "Third-party systems to integrate with Odoo"
         },
         {
           "id": "customization_scope",
-          "question": "Describe the customizations needed",
+          "question": "Describe custom module requirements",
           "type": "textarea",
           "required": false,
-          "conditional": "customizations === 'Yes'",
-          "placeholder": "e.g., Custom approval workflow, specific report format, industry-specific fields",
-          "help_text": "Detail what needs to be customized"
+          "conditional": "custom_modules_count >= 1",
+          "placeholder": "Detailed description of custom modules:\n\nI+D Module:\n- Database structure for SKU, manufacturer, specs\n- Fields for frequency, range, resolution, protocol\n- Provider linking with pricing and lead time\n- R&D process stages\n- Integration with purchasing\n- Analysis dashboard",
+          "help_text": "Detailed requirements for each custom module",
+          "rows": 8
         },
         {
           "id": "multi_company",
-          "question": "Is this a multi-company setup?",
-          "type": "radio",
+          "question": "Multi-company setup?",
+          "type": "select",
           "required": false,
-          "options": ["Yes", "No"],
-          "default": "No",
-          "help_text": "Multiple legal entities in one Odoo instance"
+          "options": ["No", "Yes"],
+          "default": "No"
         },
         {
           "id": "company_count",
-          "question": "How many companies?",
+          "question": "→ Number of companies",
           "type": "number",
           "required": false,
           "conditional": "multi_company === 'Yes'",
           "min": 2,
-          "placeholder": "e.g., 3",
-          "help_text": "Number of legal entities/companies to configure"
+          "placeholder": "2"
         },
         {
           "id": "multi_warehouse",
-          "question": "Does the client have multiple warehouses?",
-          "type": "radio",
+          "question": "Multiple warehouses?",
+          "type": "select",
           "required": false,
-          "conditional": "modules includes 'Inventory'",
-          "options": ["Yes", "No"],
-          "default": "No",
-          "help_text": "Multiple warehouse locations to manage"
+          "options": ["No", "Yes"],
+          "default": "No"
         },
         {
           "id": "warehouse_count",
-          "question": "How many warehouses/locations?",
+          "question": "→ Number of warehouses",
           "type": "number",
           "required": false,
           "conditional": "multi_warehouse === 'Yes'",
-          "min": 1,
-          "placeholder": "e.g., 3",
-          "help_text": "Number of warehouse locations"
+          "min": 2,
+          "placeholder": "3"
         }
       ]
     },
 
     {
       "id": "adoption_details",
-      "title": "Adoption Phase Details",
-      "description": "Additional information for the Adoption phase",
+      "title": "Training & Support",
+      "description": "User adoption and go-live details",
       "conditional": "adoption_phase === true",
       "questions": [
         {
           "id": "user_count",
-          "question": "How many end users will need training?",
+          "question": "Total number of users",
           "type": "number",
           "required": false,
           "min": 1,
-          "placeholder": "e.g., 25",
-          "help_text": "Total number of users who will use Odoo"
+          "placeholder": "e.g., 20",
+          "help_text": "How many people will use Odoo"
         },
         {
           "id": "user_breakdown",
-          "question": "Break down users by role/department (optional)",
+          "question": "User breakdown by role/department",
           "type": "textarea",
           "required": false,
-          "placeholder": "e.g., Sales team (5), Warehouse staff (8), Finance (3), Management (2)",
-          "help_text": "Helps plan role-based training sessions"
+          "placeholder": "e.g., Ventas (5), Operaciones (5), Servicios (3), Admin (2)",
+          "help_text": "Helps create role-based training"
         },
         {
           "id": "training_format",
           "question": "Preferred training format",
-          "type": "radio",
+          "type": "select",
           "required": false,
           "options": ["On-site", "Remote", "Hybrid"],
-          "default": "Hybrid",
-          "help_text": "How training will be delivered"
+          "default": "Hybrid"
         },
         {
-          "id": "documentation_language",
-          "question": "Documentation language(s)",
-          "type": "text",
-          "required": false,
-          "default": "English",
-          "placeholder": "e.g., English, Spanish",
-          "help_text": "Language(s) for training materials and documentation"
-        },
-        {
-          "id": "go_live_support_days",
-          "question": "How many days of intensive go-live support?",
+          "id": "golive_support_days",
+          "question": "Intensive go-live support days",
           "type": "number",
           "required": false,
           "min": 1,
-          "default": 3,
-          "placeholder": "e.g., 3",
-          "help_text": "Days of on-site/intensive support during go-live"
-        },
-        {
-          "id": "adoption_duration_months",
-          "question": "Adoption support duration (months)",
-          "type": "number",
-          "required": false,
-          "min": 1,
-          "default": 2,
-          "placeholder": "e.g., 2",
-          "help_text": "Number of months of ongoing support after go-live"
-        }
-      ]
-    },
-
-    {
-      "id": "additional_notes",
-      "title": "Additional Information",
-      "description": "Any other relevant details",
-      "questions": [
-        {
-          "id": "special_requirements",
-          "question": "Are there any special requirements or constraints?",
-          "type": "textarea",
-          "required": false,
-          "placeholder": "e.g., Compliance requirements, specific go-live constraints, budget limitations",
-          "help_text": "Anything else we should know about this project"
-        },
-        {
-          "id": "success_criteria",
-          "question": "What are the key success criteria for this project?",
-          "type": "textarea",
-          "required": false,
-          "placeholder": "e.g., 100% inventory accuracy, reduce order processing time by 50%, eliminate manual data entry",
-          "help_text": "How will success be measured?"
+          "default": 4,
+          "placeholder": "4",
+          "help_text": "Days of intensive on-site/remote support during launch"
         }
       ]
     }
-  ],
-
-  "output_requirements": {
-    "csv_fields": [
-      "Title",
-      "Project",
-      "Assignees",
-      "Allocated Time",
-      "Deadline",
-      "Stage",
-      "Priority",
-      "Tags",
-      "Milestone",
-      "Parent Task"
-    ],
-    "stage_default": "New",
-    "priority_mapping": {
-      "High": "High priority",
-      "Medium": "Medium priority",
-      "Low": "Low priority"
-    }
-  }
+  ]
 }

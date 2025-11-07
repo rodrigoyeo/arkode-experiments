@@ -56,21 +56,55 @@ function App() {
     // Parse and evaluate conditional
     const condition = question.conditional;
 
-    // Handle simple conditionals
+    // Handle >= operator
+    if (condition.includes('>=')) {
+      const [field, value] = condition.split('>=').map(s => s.trim());
+      const fieldValue = parseInt(responses[field]) || 0;
+      const compareValue = parseInt(value);
+      return fieldValue >= compareValue;
+    }
+
+    // Handle <= operator
+    if (condition.includes('<=')) {
+      const [field, value] = condition.split('<=').map(s => s.trim());
+      const fieldValue = parseInt(responses[field]) || 0;
+      const compareValue = parseInt(value);
+      return fieldValue <= compareValue;
+    }
+
+    // Handle > operator
+    if (condition.includes('>') && !condition.includes('>=')) {
+      const [field, value] = condition.split('>').map(s => s.trim());
+      const fieldValue = parseInt(responses[field]) || 0;
+      const compareValue = parseInt(value);
+      return fieldValue > compareValue;
+    }
+
+    // Handle < operator
+    if (condition.includes('<') && !condition.includes('<=')) {
+      const [field, value] = condition.split('<').map(s => s.trim());
+      const fieldValue = parseInt(responses[field]) || 0;
+      const compareValue = parseInt(value);
+      return fieldValue < compareValue;
+    }
+
+    // Handle === operator
     if (condition.includes('===')) {
       const [field, value] = condition.split('===').map(s => s.trim());
       const cleanValue = value.replace(/['"]/g, '');
       return responses[field] === cleanValue || responses[field] === (cleanValue === 'true');
     }
 
+    // Handle !== operator
     if (condition.includes('!==')) {
       const [field, value] = condition.split('!==').map(s => s.trim());
       const cleanValue = value.replace(/['"]/g, '');
       return responses[field] !== cleanValue && responses[field] !== (cleanValue === 'true');
     }
 
+    // Handle includes operator
     if (condition.includes('includes')) {
-      const match = condition.match(/(\w+)\s+includes\s+['"](.+)['"]/);
+      const match = condition.match(/(\w+)\s*\.?\s*includes\s*\(['"](.+)['"]\)/);
       if (match) {
         const [, field, value] = match;
         return responses[field]?.includes(value);
@@ -184,28 +218,33 @@ function App() {
         const selectedModules = responses.modules;
         const language = responses.language || 'English';
 
-        // Calculate custom development hours first (if needed)
+        // Calculate custom development hours
         let customDevHours = 0;
-        if (responses.customizations === 'Yes') {
-          if (responses.use_detailed_hours && responses.custom_module_hours) {
-            // Use user-specified custom module hours
-            customDevHours = parseFloat(responses.custom_module_hours);
-          } else if (!responses.enable_ai_customization) {
-            // Use hardcoded template (only if AI is disabled)
-            const customTasks = customDevTemplate.custom_development.tasks;
-            const customizationScope = responses.customization_scope || '';
+        const customModulesCount = parseInt(responses.custom_modules_count) || 0;
 
-            customTasks.forEach(task => {
-              let hours = task.estimated_hours;
-              if (task.adjustable && customizationScope.length > 100) {
-                hours = Math.min(80, Math.max(20, Math.round(customizationScope.length / 5)));
-              }
-              customDevHours += hours;
-            });
-          } else {
-            // AI will handle custom dev, reserve 50% of implementation hours
+        if (customModulesCount > 0) {
+          // Sum up hours from all custom modules
+          for (let i = 1; i <= customModulesCount; i++) {
+            const moduleHours = parseFloat(responses[`custom_module_${i}_hours`]) || 0;
+            customDevHours += moduleHours;
+          }
+
+          // If no hours specified, reserve 50% of implementation for custom dev
+          if (customDevHours === 0 && responses.enable_ai_customization) {
             customDevHours = implementationHours * 0.5;
           }
+        } else if (!responses.enable_ai_customization && responses.customizations === 'Yes') {
+          // Fallback to old hardcoded template (if AI disabled and no custom modules specified)
+          const customTasks = customDevTemplate.custom_development.tasks;
+          const customizationScope = responses.customization_scope || '';
+
+          customTasks.forEach(task => {
+            let hours = task.estimated_hours;
+            if (task.adjustable && customizationScope.length > 100) {
+              hours = Math.min(80, Math.max(20, Math.round(customizationScope.length / 5)));
+            }
+            customDevHours += hours;
+          });
         }
 
         // Add migration hours if specified
@@ -719,6 +758,16 @@ function App() {
         return (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
             <p className="text-blue-800">{question.content || question.help_text}</p>
+          </div>
+        );
+
+      case 'section_header':
+        return (
+          <div className="border-t-2 border-gray-300 mt-6 pt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{question.question}</h3>
+            {question.help_text && (
+              <p className="text-sm text-gray-600">{question.help_text}</p>
+            )}
           </div>
         );
 
