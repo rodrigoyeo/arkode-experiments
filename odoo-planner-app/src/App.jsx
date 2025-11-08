@@ -175,6 +175,23 @@ function App() {
     return addDays(dateString, weeks * 7);
   };
 
+  // Helper function to get next workday (skip weekends)
+  const getNextWorkday = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+
+    if (dayOfWeek === 0) {
+      // Sunday → move to Monday
+      return addDays(dateString, 1);
+    } else if (dayOfWeek === 6) {
+      // Saturday → move to Monday
+      return addDays(dateString, 2);
+    }
+
+    return dateString; // Already a weekday
+  };
+
   const generateProjectPlan = async () => {
     setIsGenerating(true);
 
@@ -303,8 +320,8 @@ function App() {
             phase: 'Clarity',
             assignee: assignTaskToTeamMember(task.tags, 'Clarity'),
             stage: 'New',
-            start_date: weekStart,
-            deadline: weekEnd,
+            start_date: '', // Empty - dates managed at milestone level
+            deadline: '', // Empty - dates managed at milestone level
             milestone: milestoneName,
             parent_task: '',
             task_type: task.task_type || 'native',
@@ -447,8 +464,8 @@ function App() {
               module: moduleName,
               assignee: assignTaskToTeamMember(task.tags, 'Implementation'),
               stage: 'New',
-              start_date: taskStart,
-              deadline: taskEnd,
+              start_date: '', // Empty - dates managed at milestone level
+              deadline: '', // Empty - dates managed at milestone level
               milestone: language === 'Spanish' ? `Implementación del módulo de ${moduleName}` : `Implementation of ${moduleName} Module`,
               parent_task: '',
               odoo_feature: task.odoo_feature || '',
@@ -483,8 +500,8 @@ function App() {
           module: 'Security',
           assignee: assignTaskToTeamMember(['Odoo Developer'], 'Implementation'),
           stage: 'New',
-          start_date: currentImplDate,
-          deadline: securityTaskEnd,
+          start_date: '', // Empty - dates managed at milestone level
+          deadline: '', // Empty - dates managed at milestone level
           milestone: language === 'Spanish' ? 'Configuración de Seguridad' : 'Security Configuration',
           parent_task: '',
           task_type: 'native'
@@ -520,8 +537,8 @@ function App() {
               module: 'Inventory',
               assignee: assignTaskToTeamMember(['Odoo Developer'], 'Implementation'),
               stage: 'New',
-              start_date: warehouseDate,
-              deadline: warehouseEnd,
+              start_date: '', // Empty - dates managed at milestone level
+              deadline: '', // Empty - dates managed at milestone level
               milestone: language === 'Spanish' ? 'Implementación del módulo de Inventory' : 'Implementation of Inventory Module',
               parent_task: '',
               task_type: 'native'
@@ -551,8 +568,8 @@ function App() {
             module: 'Inventory',
             assignee: assignTaskToTeamMember(['Odoo Developer'], 'Implementation'),
             stage: 'New',
-            start_date: warehouseDate,
-            deadline: transferEnd,
+            start_date: '', // Empty - dates managed at milestone level
+            deadline: '', // Empty - dates managed at milestone level
             milestone: language === 'Spanish' ? 'Implementación del módulo de Inventory' : 'Implementation of Inventory Module',
             parent_task: '',
             task_type: 'native'
@@ -592,8 +609,8 @@ function App() {
               module: 'Custom Development',
               assignee: assignTaskToTeamMember(task.tags, 'Implementation'),
               stage: 'New',
-              start_date: customDevDate,
-              deadline: taskEnd,
+              start_date: '', // Empty - dates managed at milestone level
+              deadline: '', // Empty - dates managed at milestone level
               milestone: 'Custom Development',
               parent_task: '',
               task_type: 'custom' // Mark as custom
@@ -645,10 +662,15 @@ function App() {
           calculatedImplementationEndDate = addWeeks(clarityEndDate, implementationWeeks);
         }
 
-        const adoptionStartDate = addWeeks(calculatedImplementationEndDate, -2); // Start 2 weeks before go-live
-        const goLiveDate = calculatedImplementationEndDate;
+        // FIXED: Adoption timing
+        // - Training starts 2 weeks BEFORE deadline
+        // - Go-Live = deadline date
+        // - Support months start AFTER deadline (extends beyond project)
+        const deadline = responses.project_deadline || calculatedImplementationEndDate;
+        const adoptionStartDate = addWeeks(deadline, -2); // Training starts 2 weeks before deadline
+        const goLiveDate = deadline; // Go-live = deadline
 
-        // Add core adoption tasks
+        // Add core adoption tasks (training + go-live preparation)
         const coreTasks = adoptionPhaseImproved.adoption_phase.standard_tasks;
         const coreTasksEstimatedHours = coreTasks.reduce((sum, t) => sum + t.estimated_hours, 0);
 
@@ -677,8 +699,8 @@ function App() {
             phase: 'Adoption',
             assignee: assignTaskToTeamMember(task.tags, 'Adoption'),
             stage: 'New',
-            start_date: adoptionDate,
-            deadline: taskEnd,
+            start_date: '', // Empty - dates managed at milestone level
+            deadline: '', // Empty - dates managed at milestone level
             milestone: language === 'Spanish' ? 'Capacitación y Go-Live' : 'Training & Go-Live',
             parent_task: '',
             task_type: task.task_type || 'native'
@@ -692,31 +714,22 @@ function App() {
           }
         });
 
-        // Add dynamic monthly support tasks - use remaining template budget (60% of template budget)
+        // Add monthly support tasks AFTER deadline - use remaining template budget (60% of template budget)
         const coreTasksActualHours = coreTasksTargetHours;
         const remainingHours = adoptionTemplateBudget - coreTasksActualHours;
         if (remainingHours > 0 && adoptionDurationMonths > 0) {
           const monthlyHours = Math.round(remainingHours / adoptionDurationMonths);
 
-          // TIMELINE FIX: Calculate available time between go-live and deadline
-          // If deadline is set, compress support months to fit within it
-          let weeksPerMonth = 4; // Default: 4 weeks per month
+          // FIXED: Support starts AFTER go-live (which is the deadline)
+          // Each month = 4 weeks, extends beyond project deadline
+          const dayAfterGoLive = addDays(goLiveDate, 1);
+          const supportStartDate = getNextWorkday(dayAfterGoLive); // Start on next workday after go-live
 
-          if (calculatedDeadline) {
-            const deadline = new Date(calculatedDeadline);
-            const goLive = new Date(goLiveDate);
-            const availableDays = Math.max(7, Math.ceil((deadline - goLive) / (1000 * 60 * 60 * 24)));
-            const totalWeeksAvailable = Math.floor(availableDays / 7);
-
-            // Distribute available weeks across support months
-            weeksPerMonth = Math.max(1, Math.floor(totalWeeksAvailable / adoptionDurationMonths));
-
-            console.log(`⏰ Support Timeline Compression: ${totalWeeksAvailable} weeks available for ${adoptionDurationMonths} months = ${weeksPerMonth} weeks/month`);
-          }
+          console.log(`📅 Support starts on ${supportStartDate} (day after go-live: ${goLiveDate})`);
 
           for (let month = 1; month <= adoptionDurationMonths; month++) {
-            const monthStart = addWeeks(goLiveDate, (month - 1) * weeksPerMonth);
-            const monthEnd = addWeeks(goLiveDate, month * weeksPerMonth);
+            const monthStart = addWeeks(supportStartDate, (month - 1) * 4); // 4 weeks per month
+            const monthEnd = addWeeks(supportStartDate, month * 4);
 
             plan.tasks.push({
               id: taskId++,
@@ -733,9 +746,9 @@ function App() {
               phase: 'Adoption',
               assignee: assignTaskToTeamMember(['Adoption', 'Support', `Month ${month}`], 'Adoption'),
               stage: 'New',
-              start_date: monthStart,
-              deadline: monthEnd,
-              milestone: language === 'Spanish' ? 'Capacitación y Go-Live' : 'Training & Go-Live',
+              start_date: '', // Empty - dates managed at milestone level
+              deadline: '', // Empty - dates managed at milestone level
+              milestone: language === 'Spanish' ? `Soporte - Mes ${month}` : `Support - Month ${month}`,
               parent_task: '',
               task_type: 'native'
             });
@@ -2262,21 +2275,43 @@ function App() {
 
                     const implementationEnd = currentDate;
 
-                    // Adoption Phase Milestone
+                    // Adoption Phase Milestones
                     if (responses.adoption_phase) {
                       const adoptionMonths = parseInt(responses.adoption_duration_months || 2);
-                      const adoptionEnd = addWeeks(currentDate, adoptionMonths * 4);
+                      const deadline = responses.project_deadline || currentDate;
 
+                      // Training & Go-Live milestone (ends on deadline)
+                      const trainingStart = addWeeks(deadline, -2); // 2 weeks before deadline
                       milestones.push({
                         name: language === 'Spanish' ? 'Capacitación y Go-Live' : 'Training & Go-Live',
                         name_en: 'Training & Go-Live',
                         name_es: 'Capacitación y Go-Live',
-                        start: currentDate,
-                        end: adoptionEnd,
+                        start: trainingStart,
+                        end: deadline,
                         deliverables: language === 'Spanish'
-                          ? 'Usuarios capacitados, Sistema en producción, Soporte post-lanzamiento'
-                          : 'Users trained, System in production, Post-launch support'
+                          ? 'Usuarios capacitados, Sistema en producción'
+                          : 'Users trained, System in production'
                       });
+
+                      // Support month milestones (AFTER deadline)
+                      const dayAfterDeadline = addDays(deadline, 1);
+                      const supportStart = getNextWorkday(dayAfterDeadline);
+
+                      for (let month = 1; month <= adoptionMonths; month++) {
+                        const monthStart = addWeeks(supportStart, (month - 1) * 4);
+                        const monthEnd = addWeeks(supportStart, month * 4);
+
+                        milestones.push({
+                          name: language === 'Spanish' ? `Soporte - Mes ${month}` : `Support - Month ${month}`,
+                          name_en: `Support - Month ${month}`,
+                          name_es: `Soporte - Mes ${month}`,
+                          start: monthStart,
+                          end: monthEnd,
+                          deliverables: language === 'Spanish'
+                            ? `Soporte continuo y asistencia - Mes ${month}`
+                            : `Ongoing support and assistance - Month ${month}`
+                        });
+                      }
                     }
 
                     return milestones.map((milestone, index) => {
