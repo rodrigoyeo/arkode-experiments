@@ -173,6 +173,16 @@
           "show_more_threshold": 8
         },
         {
+          "id": "module_customizations",
+          "question": "→ Module Customizations",
+          "type": "textarea",
+          "required": false,
+          "conditional": "implementation_phase === true",
+          "placeholder": "Describe customizations for each module:\n\nCRM: Lead scoring based on engagement, WhatsApp integration, AI chatbot\nPurchase: Compare multiple POs side-by-side, approval workflow for orders >$10K\nInventory: Custom barcode labels, automated reorder points by location",
+          "help_text": "List which native modules will be customized and what features will be added. This helps AI generate specific customization tasks.",
+          "rows": 6
+        },
+        {
           "id": "custom_modules_visual",
           "question": "→ Custom Modules",
           "type": "custom_modules",
@@ -266,23 +276,6 @@
           "required": false,
           "placeholder": "e.g., Manual processes, no inventory visibility, disconnected systems",
           "help_text": "Problems to solve with Odoo"
-        },
-        {
-          "id": "core_processes",
-          "question": "Core Business Processes",
-          "type": "textarea",
-          "required": false,
-          "placeholder": "e.g., Quote-to-Cash, Procure-to-Pay, Make-to-Order production",
-          "help_text": "Key business processes to map"
-        },
-        {
-          "id": "workshop_count",
-          "question": "Number of Discovery Workshops",
-          "type": "number",
-          "required": false,
-          "min": 1,
-          "default": 4,
-          "placeholder": "4"
         }
       ]
     },
@@ -372,23 +365,6 @@
       "description": "User adoption and go-live details",
       "conditional": "adoption_phase === true",
       "questions": [
-        {
-          "id": "user_count",
-          "question": "Total number of users",
-          "type": "number",
-          "required": false,
-          "min": 1,
-          "placeholder": "e.g., 20",
-          "help_text": "How many people will use Odoo"
-        },
-        {
-          "id": "user_breakdown",
-          "question": "User breakdown by role/department",
-          "type": "textarea",
-          "required": false,
-          "placeholder": "e.g., Ventas (5), Operaciones (5), Servicios (3), Admin (2)",
-          "help_text": "Helps create role-based training"
-        },
         {
           "id": "training_format",
           "question": "Preferred training format",

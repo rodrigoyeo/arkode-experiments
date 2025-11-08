@@ -404,6 +404,75 @@ function App() {
           });
         });
 
+        // Add Multi-Warehouse Configuration tasks if applicable
+        if (responses.multi_warehouse === 'Yes' && responses.warehouse_count > 1) {
+          const warehouseCount = parseInt(responses.warehouse_count) || 2;
+          console.log(`📦 Adding multi-warehouse configuration tasks for ${warehouseCount} warehouses`);
+
+          let warehouseDate = currentImplDate;
+
+          // Per-warehouse setup tasks
+          for (let i = 1; i <= warehouseCount; i++) {
+            const warehouseTaskDuration = 3; // 3 days per warehouse
+            const warehouseEnd = addDays(warehouseDate, warehouseTaskDuration);
+
+            plan.tasks.push({
+              id: taskId++,
+              title: language === 'Spanish'
+                ? `Configuración del Almacén ${i}`
+                : `Warehouse ${i} Configuration`,
+              description: language === 'Spanish'
+                ? `Configurar estructura de ubicaciones, rutas de reabastecimiento, reglas de picking y política de inventario para el Almacén ${i}.`
+                : `Configure location structure, replenishment routes, picking rules, and inventory policy for Warehouse ${i}.`,
+              allocated_hours: 6,
+              priority: 'High',
+              category: language === 'Spanish' ? 'Configuración de Inventario' : 'Inventory Configuration',
+              tags: ['Implementation', 'Inventory', 'Multi-warehouse'],
+              phase: 'Implementation',
+              module: 'Inventory',
+              assignee: assignTaskToTeamMember(['Odoo Developer'], 'Implementation'),
+              stage: 'New',
+              start_date: warehouseDate,
+              deadline: warehouseEnd,
+              milestone: language === 'Spanish' ? 'Implementación del módulo de Inventory' : 'Implementation of Inventory Module',
+              parent_task: '',
+              task_type: 'native'
+            });
+
+            warehouseDate = addDays(warehouseDate, 2); // Overlap warehouses slightly
+          }
+
+          // Inter-warehouse transfer configuration
+          const transferHours = Math.min(warehouseCount * 2, 12); // 2h per warehouse, max 12h
+          const transferDuration = Math.max(3, Math.ceil(transferHours / 8));
+          const transferEnd = addDays(warehouseDate, transferDuration);
+
+          plan.tasks.push({
+            id: taskId++,
+            title: language === 'Spanish'
+              ? 'Configuración de Transferencias Entre Almacenes'
+              : 'Inter-warehouse Transfer Configuration',
+            description: language === 'Spanish'
+              ? `Configurar rutas de transferencia, reglas de reabastecimiento automático y políticas de stock entre los ${warehouseCount} almacenes.`
+              : `Configure transfer routes, automatic replenishment rules, and stock policies between the ${warehouseCount} warehouses.`,
+            allocated_hours: transferHours,
+            priority: 'High',
+            category: language === 'Spanish' ? 'Configuración de Inventario' : 'Inventory Configuration',
+            tags: ['Implementation', 'Inventory', 'Multi-warehouse', 'Transfers'],
+            phase: 'Implementation',
+            module: 'Inventory',
+            assignee: assignTaskToTeamMember(['Odoo Developer'], 'Implementation'),
+            stage: 'New',
+            start_date: warehouseDate,
+            deadline: transferEnd,
+            milestone: language === 'Spanish' ? 'Implementación del módulo de Inventory' : 'Implementation of Inventory Module',
+            parent_task: '',
+            task_type: 'native'
+          });
+
+          currentImplDate = transferEnd;
+        }
+
         // Add Custom Development tasks if customizations are required
         // ONLY if AI customization is disabled (otherwise AI generates custom tasks)
         if (responses.customizations === 'Yes' && responses.enable_ai_customization === false) {

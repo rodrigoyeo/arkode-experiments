@@ -1,5 +1,22 @@
 # Questionnaire Questions - Usage Analysis
 
+**UPDATED:** This document has been updated to reflect the latest implementation changes.
+
+## Recent Changes (Latest Update)
+
+✅ **IMPLEMENTED:**
+1. **Industry** - Now used in AI prompts with industry-specific guidance (Manufacturing, Retail, etc.)
+2. **Multi-warehouse** - Generates warehouse configuration tasks (per-warehouse setup + inter-warehouse transfers)
+3. **Module Customizations** - NEW question added to capture per-module customization requirements for AI
+
+✅ **REMOVED (No longer asked):**
+1. **Core Business Processes** - Not providing enough value, removed
+2. **Workshop Count** - Not used in task generation, removed
+3. **User Count** - Not scaling training hours effectively, removed
+4. **User Breakdown** - Not generating role-specific tasks, removed
+
+---
+
 This document shows **exactly how each question is used** in plan generation, and which questions are currently **NOT being used** (opportunities for improvement!).
 
 ---
@@ -338,3 +355,111 @@ These are working great! Keep them.
 3. **Consider removing unused questions** OR implement them properly
 
 Don't waste the user's time asking questions you won't use!
+
+---
+
+## ✅ IMPLEMENTATION STATUS (Current)
+
+### Phase 1: Industry + Multi-warehouse - COMPLETED ✅
+
+**Industry Usage:**
+- Added industry-specific guidance to AI prompts
+- 8 industry types with tailored focus areas (Manufacturing → MRP, Retail → POS, etc.)
+- AI now generates industry-relevant tasks
+
+**Code:** `src/services/aiCustomization.js:373-410`
+
+**Multi-warehouse Task Generation:**
+- Generates per-warehouse configuration tasks (6h each)
+- Generates inter-warehouse transfer configuration (scales with warehouse count)
+- Tasks added to Inventory module milestone
+
+**Code:** `src/App.jsx:407-474`
+
+**Example Output:**
+- User selects 3 warehouses → Generates:
+  - "Configuración del Almacén 1" (6h)
+  - "Configuración del Almacén 2" (6h)
+  - "Configuración del Almacén 3" (6h)
+  - "Configuración de Transferencias Entre Almacenes" (6h)
+
+---
+
+### Phase 2: Per-Module Customization - COMPLETED ✅
+
+**NEW Question Added:**
+- `module_customizations` (textarea)
+- Appears after "Modules to Implement"
+- User describes customizations per module
+
+**Example Input:**
+```
+CRM: Lead scoring based on engagement, WhatsApp integration, AI chatbot
+Purchase: Compare multiple POs side-by-side, approval workflow for orders >$10K
+Inventory: Custom barcode labels, automated reorder points by location
+```
+
+**AI Processing:**
+- Parses module customizations from text
+- Generates Requirements, Design, Development, Testing tasks per customization
+- Tasks assigned to appropriate module milestone
+- Includes `custom_module` field for milestone assignment
+
+**Code:**
+- Questionnaire: `questionnaire-structure.json:175-184`
+- AI Context: `src/services/aiCustomization.js:267`
+- AI Prompt: `src/services/aiCustomization.js:467-498`
+
+**Example Output:**
+- "CRM - Requirements Analysis for Lead Scoring" (6h)
+- "CRM - WhatsApp Integration Development" (12h)
+- "Purchase - PO Comparison Feature Development" (10h)
+
+---
+
+### Phase 3: Remove Unused Questions - COMPLETED ✅
+
+**Removed Questions:**
+1. ❌ `core_processes` - Not generating specific tasks
+2. ❌ `workshop_count` - Not scaling workshop tasks
+3. ❌ `user_count` - Not scaling training hours
+4. ❌ `user_breakdown` - Not generating role-specific training
+
+**Rationale:** These questions were being asked but NOT used in task generation. Removing them streamlines the questionnaire and reduces user effort.
+
+**Code:** `questionnaire-structure.json` (removed lines)
+
+---
+
+## Summary: Before vs After
+
+### Before Implementation:
+- ❌ Industry asked but not emphasized in AI
+- ❌ Multi-warehouse asked but no tasks generated
+- ❌ No way to specify per-module customizations
+- ❌ 4 unused questions wasting user time
+
+### After Implementation:
+- ✅ Industry drives AI task generation with specific guidance
+- ✅ Multi-warehouse generates realistic configuration tasks
+- ✅ Per-module customizations captured and sent to AI
+- ✅ Questionnaire streamlined (removed 4 unused questions)
+
+---
+
+## Impact Assessment
+
+**User Experience:**
+- Shorter questionnaire (4 fewer questions)
+- More relevant questions (module customizations)
+- Clearer expectations (better help text)
+
+**Task Quality:**
+- Industry-specific AI tasks (e.g., Manufacturing → MRP focus)
+- Warehouse configuration tasks reflect actual setup work
+- Per-module customization tasks are specific and actionable
+
+**Next Iteration Opportunities:**
+- Consider adding training_format to task descriptions
+- Consider using golive_support_days to scale support tasks
+- Monitor if data_migration_scope is being effectively used by AI

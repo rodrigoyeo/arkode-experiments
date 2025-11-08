@@ -264,6 +264,7 @@ function buildContext(responses) {
 
     // Implementation context
     modules: responses.modules || [],
+    module_customizations: responses.module_customizations || '',
     data_migration: responses.data_migration || 'No',
     data_migration_scope: responses.data_migration_scope || '',
     integrations: responses.integrations || 'No',
@@ -370,7 +371,24 @@ function buildPrompt(context, phase, language) {
   const examples = getExamples(language);
   const isSpanish = language === 'Spanish' || language === 'Español';
 
-  const baseInstructions = `You are an expert Odoo implementation consultant at Arkode.
+  // Build industry-specific guidance
+  const industryGuidance = {
+    'Manufacturing': 'Focus on: MRP processes, production planning, bill of materials, work orders, quality control, shop floor management',
+    'Distribution/Wholesale': 'Focus on: Inventory management, purchase orders, vendor management, multi-warehouse operations, logistics',
+    'Retail/E-commerce': 'Focus on: POS systems, e-commerce integration, customer loyalty, inventory turnover, omnichannel sales',
+    'Professional Services': 'Focus on: Project management, timesheets, resource allocation, client billing, service contracts',
+    'Field Services': 'Focus on: Work order scheduling, technician dispatch, mobile access, equipment tracking, service history',
+    'Construction': 'Focus on: Project costing, equipment management, subcontractor management, job tracking, change orders',
+    'Healthcare': 'Focus on: Patient management, appointment scheduling, HIPAA compliance, medical inventory, billing',
+    'Technology/Software': 'Focus on: Subscription management, license tracking, SaaS metrics, customer onboarding, support ticketing'
+  };
+
+  const industryContext = industryGuidance[context.industry] || 'Focus on industry best practices';
+
+  const baseInstructions = `You are an expert Odoo implementation consultant at Arkode specializing in ${context.industry} implementations.
+
+INDUSTRY CONTEXT: ${context.industry}
+${industryContext}
 
 CRITICAL LANGUAGE REQUIREMENT:
 - ALL task names MUST be in ${language} language
@@ -384,6 +402,7 @@ CRITICAL RULES:
 - Estimated hours must be whole numbers only (no decimals)
 - Each task must have: name, description, estimated_hours, priority, category, tags (array)
 - For custom module tasks, include "custom_module" field with the exact module name
+- TAILOR tasks to ${context.industry} industry requirements and terminology
 
 Context:
 Industry: ${context.industry}
@@ -445,20 +464,33 @@ Return format (example in ${language}):
 Data Migration Scope: ${context.data_migration_scope || 'None'}
 Integration Requirements: ${context.integration_list || 'None'}
 
+Native Module Customizations:
+${context.module_customizations || 'None - using vanilla Odoo modules'}
+
 Custom Modules to Develop:
 ${customModulesDescription}
 
 Multi-company: ${context.multi_company} ${context.multi_company === 'Yes' ? `(${context.company_count} companies)` : ''}
 Multi-warehouse: ${context.multi_warehouse} ${context.multi_warehouse === 'Yes' ? `(${context.warehouse_count} warehouses)` : ''}
 
-TASK: Generate specific Implementation tasks for DATA MIGRATION and CUSTOM MODULES.
+TASK: Generate specific Implementation tasks for NATIVE MODULE CUSTOMIZATIONS, DATA MIGRATION, and CUSTOM MODULES.
 
 BUDGET CONSTRAINT: Total hours for ALL tasks must NOT exceed ${customDevBudget} hours.
 
 IMPORTANT - Generate tasks ONLY for:
-1. Data migration from systems mentioned (if scope provided)
-2. Custom modules listed above - break down each module into subtasks
-3. Third-party integrations listed (if any)
+1. **Native module customizations** (listed above) - break down each customization into Requirements, Design, Development, Testing tasks
+2. Data migration from systems mentioned (if scope provided)
+3. Custom modules listed above - break down each module into subtasks
+4. Third-party integrations listed (if any)
+
+CRITICAL - For Native Module Customizations:
+- Parse the customizations text to identify which modules (CRM, Purchase, Inventory, etc.) need customization
+- For each customized module, generate 3-5 tasks:
+  * Requirements Analysis for [Module] Customizations
+  * Technical Design for [specific feature]
+  * Development of [specific feature]
+  * Testing & QA for [Module] Customizations
+- Include "custom_module" field with the module name (e.g., "CRM", "Purchase")
 
 DO NOT generate tasks for:
 - Standard Odoo module configuration (CRM, Sales, etc.) - templates handle this
