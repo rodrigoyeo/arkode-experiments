@@ -180,53 +180,41 @@ function App() {
           timeline: responses.timeline,
           go_live_date: responses.go_live_date
         },
-        tasks: []
+        tasks: [],
+        metadata: {}
       };
 
       let taskId = 1;
       const projectStartDate = responses.project_start_date || new Date().toISOString().split('T')[0];
 
       // Calculate project timeline constraints
-      const projectDurationWeeks = parseInt(responses.project_duration_weeks) || null;
-      const projectDeadline = responses.project_deadline || null;
+      const projectDeadline = responses.project_deadline;
 
-      // Calculate total available days
-      let totalAvailableDays = null;
-      let calculatedDeadline = projectDeadline;
-
-      if (projectDeadline) {
-        // If deadline is specified, calculate days between start and deadline
-        const start = new Date(projectStartDate);
-        const end = new Date(projectDeadline);
-        totalAvailableDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-      } else if (projectDurationWeeks) {
-        // If only duration is specified, calculate deadline
-        totalAvailableDays = projectDurationWeeks * 7;
-        calculatedDeadline = addDays(projectStartDate, totalAvailableDays);
-      }
+      // Calculate total available days based on start date and deadline
+      const start = new Date(projectStartDate);
+      const end = new Date(projectDeadline);
+      const totalAvailableDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      const calculatedDeadline = projectDeadline;
 
       // Calculate phase durations based on constraints
-      let clarityDurationWeeks = 4; // Default: 4 weeks max for Clarity
+      // Ensure Clarity doesn't exceed 4 weeks OR total available time
+      const maxClarityDays = Math.min(28, totalAvailableDays * 0.3); // Max 4 weeks or 30% of project
+      const clarityDurationWeeks = Math.min(4, Math.ceil(maxClarityDays / 7));
+
+      // Distribute remaining time between Implementation and Adoption
+      const remainingDays = totalAvailableDays - (clarityDurationWeeks * 7);
+
       let implementationDays = null;
       let adoptionDays = null;
 
-      if (totalAvailableDays) {
-        // Ensure Clarity doesn't exceed 4 weeks OR total available time
-        const maxClarityDays = Math.min(28, totalAvailableDays * 0.3); // Max 4 weeks or 30% of project
-        clarityDurationWeeks = Math.min(4, Math.ceil(maxClarityDays / 7));
-
-        // Distribute remaining time between Implementation and Adoption
-        const remainingDays = totalAvailableDays - (clarityDurationWeeks * 7);
-
-        // Implementation gets 60% of remaining, Adoption gets 40%
-        if (responses.implementation_phase && responses.adoption_phase) {
-          implementationDays = Math.floor(remainingDays * 0.6);
-          adoptionDays = Math.floor(remainingDays * 0.4);
-        } else if (responses.implementation_phase) {
-          implementationDays = remainingDays;
-        } else if (responses.adoption_phase) {
-          adoptionDays = remainingDays;
-        }
+      // Implementation gets 60% of remaining, Adoption gets 40%
+      if (responses.implementation_phase && responses.adoption_phase) {
+        implementationDays = Math.floor(remainingDays * 0.6);
+        adoptionDays = Math.floor(remainingDays * 0.4);
+      } else if (responses.implementation_phase) {
+        implementationDays = remainingDays;
+      } else if (responses.adoption_phase) {
+        adoptionDays = remainingDays;
       }
 
       console.log('📅 Timeline Constraints:', {

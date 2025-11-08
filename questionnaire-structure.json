@@ -92,21 +92,11 @@
           "required": false
         },
         {
-          "id": "project_duration_weeks",
-          "question": "Estimated Project Duration (weeks)",
-          "type": "number",
-          "required": false,
-          "min": 1,
-          "max": 52,
-          "placeholder": "e.g., 16",
-          "help_text": "How many weeks do you have to complete the project?"
-        },
-        {
           "id": "project_deadline",
-          "question": "Project Deadline (Optional)",
+          "question": "Project Deadline",
           "type": "date",
-          "required": false,
-          "help_text": "If you have a hard deadline, specify it here"
+          "required": true,
+          "help_text": "Specify the hard deadline for the project"
         },
         {
           "id": "enable_ai_customization",
@@ -246,6 +236,21 @@
     },
 
     {
+      "id": "module_customizations",
+      "title": "Module Customizations",
+      "description": "Describe customizations for the modules you flagged",
+      "conditional": "implementation_phase === true && module_customization_flags && Object.keys(module_customization_flags).length > 0",
+      "questions": [
+        {
+          "id": "module_customization_details",
+          "question": "Module Customization Details",
+          "type": "module_customization_details",
+          "required": false
+        }
+      ]
+    },
+
+    {
       "id": "clarity_details",
       "title": "Discovery & Requirements",
       "description": "Details for the Clarity phase",
@@ -345,21 +350,6 @@
           "conditional": "multi_warehouse === 'Yes'",
           "min": 2,
           "placeholder": "3"
-        }
-      ]
-    },
-
-    {
-      "id": "module_customizations",
-      "title": "Module Customizations",
-      "description": "Describe customizations for the modules you flagged",
-      "conditional": "implementation_phase === true && module_customization_flags && Object.keys(module_customization_flags).length > 0",
-      "questions": [
-        {
-          "id": "module_customization_details",
-          "question": "Module Customization Details",
-          "type": "module_customization_details",
-          "required": false
         }
       ]
     },
