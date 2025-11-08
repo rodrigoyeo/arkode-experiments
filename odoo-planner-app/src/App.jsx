@@ -1205,112 +1205,114 @@ function App() {
     setEditingMilestoneValue('');
   };
 
-  // Export Project + Milestones CSV
+  // Export Project + Milestones CSV (Odoo format)
   const exportProjectCSV = () => {
     if (!generatedPlan) return;
 
     const language = responses.language || 'English';
 
-    // Build milestones data
-    const milestones = [];
+    // Calculate total allocated hours from input
+    let totalHours = 0;
+    if (responses.clarity_phase) {
+      totalHours += parseFloat(responses.clarity_hours) || 0;
+    }
+    if (responses.implementation_phase) {
+      // Sum all implementation-related hours
+      const moduleFields = [
+        'module_crm_hours', 'module_sales_hours', 'module_purchase_hours',
+        'module_inventory_hours', 'module_accounting_hours', 'module_projects_hours',
+        'module_fsm_hours', 'module_expenses_hours', 'module_manufacturing_hours',
+        'module_ecommerce_hours', 'module_pos_hours', 'module_hr_hours',
+        'module_payroll_hours', 'module_helpdesk_hours'
+      ];
+      moduleFields.forEach(field => {
+        totalHours += parseFloat(responses[field]) || 0;
+      });
+
+      // Add custom module hours
+      const customCount = parseInt(responses.custom_modules_count) || 0;
+      for (let i = 1; i <= customCount; i++) {
+        totalHours += parseFloat(responses[`custom_module_${i}_hours`]) || 0;
+      }
+
+      // Add migration hours
+      totalHours += parseFloat(responses.migration_hours) || 0;
+    }
+    if (responses.adoption_phase) {
+      const trainingHours = parseFloat(responses.training_hours) || 0;
+      const supportPerMonth = parseFloat(responses.support_hours_per_month) || 0;
+      const adoptionDurationMonths = parseInt(responses.adoption_duration_months || 2);
+      totalHours += trainingHours + (supportPerMonth * adoptionDurationMonths);
+    }
+
+    // Build milestone names array
+    const milestoneNames = [];
     const projectStartDate = responses.project_start_date || new Date().toISOString().split('T')[0];
     let currentDate = projectStartDate;
 
     // Clarity milestones
     if (responses.clarity_phase) {
-      milestones.push({
-        'Milestone': language === 'Spanish' ? 'Mapeo de Procesos' : 'Process Mapping',
-        'Start Date': currentDate,
-        'End Date': addWeeks(currentDate, 2),
-        'Deliverables': language === 'Spanish'
-          ? 'Procesos As-Is documentados, Análisis de brechas'
-          : 'As-Is processes documented, Gap analysis'
-      });
-      currentDate = addWeeks(currentDate, 2);
-
-      milestones.push({
-        'Milestone': language === 'Spanish' ? 'Hallazgos, Oportunidades y TO-BE' : 'Findings, Opportunities & TO-BE',
-        'Start Date': currentDate,
-        'End Date': addWeeks(currentDate, 1),
-        'Deliverables': language === 'Spanish'
-          ? 'Procesos TO-BE diseñados, Plan de optimización'
-          : 'TO-BE processes designed, Optimization plan'
-      });
-      currentDate = addWeeks(currentDate, 1);
-
-      milestones.push({
-        'Milestone': 'Master of Implementation',
-        'Start Date': currentDate,
-        'End Date': addWeeks(currentDate, 1),
-        'Deliverables': language === 'Spanish'
-          ? 'Prototipo de Odoo, Mockups del sistema futuro'
-          : 'Odoo prototype, Future system mockups'
-      });
-      currentDate = addWeeks(currentDate, 1);
+      milestoneNames.push(language === 'Spanish' ? 'Mapeo de Procesos' : 'Process Mapping');
+      milestoneNames.push(language === 'Spanish' ? 'Hallazgos, Oportunidades y TO-BE' : 'Findings, Opportunities & TO-BE');
+      milestoneNames.push('Master of Implementation');
     }
 
     // Implementation milestones
     if (responses.implementation_phase && responses.modules?.length > 0) {
       responses.modules.forEach(moduleName => {
-        milestones.push({
-          'Milestone': language === 'Spanish' ? `Implementación del módulo de ${moduleName}` : `Implementation of ${moduleName} Module`,
-          'Start Date': '',
-          'End Date': '',
-          'Deliverables': language === 'Spanish'
-            ? `Configuración de ${moduleName}, Pruebas`
-            : `${moduleName} Configuration, Testing`
-        });
+        milestoneNames.push(
+          language === 'Spanish'
+            ? `Implementación del módulo de ${moduleName}`
+            : `Implementation of ${moduleName} Module`
+        );
       });
     }
 
     // Adoption milestones
     if (responses.adoption_phase) {
-      const deadline = responses.project_deadline || currentDate;
-      const trainingStart = addWeeks(deadline, -2);
-
-      milestones.push({
-        'Milestone': language === 'Spanish' ? 'Capacitación y Go-Live' : 'Training & Go-Live',
-        'Start Date': trainingStart,
-        'End Date': deadline,
-        'Deliverables': language === 'Spanish'
-          ? 'Usuarios capacitados, Sistema en producción'
-          : 'Users trained, System in production'
-      });
+      milestoneNames.push(language === 'Spanish' ? 'Capacitación y Go-Live' : 'Training & Go-Live');
 
       // Support months
       const adoptionMonths = parseInt(responses.adoption_duration_months || 2);
-      const dayAfterDeadline = addDays(deadline, 1);
-      const supportStart = getNextWorkday(dayAfterDeadline);
-
       for (let month = 1; month <= adoptionMonths; month++) {
-        const monthStart = addWeeks(supportStart, (month - 1) * 4);
-        const monthEnd = addWeeks(supportStart, month * 4);
-
-        milestones.push({
-          'Milestone': language === 'Spanish' ? `Soporte - Mes ${month}` : `Support - Month ${month}`,
-          'Start Date': monthStart,
-          'End Date': monthEnd,
-          'Deliverables': language === 'Spanish'
-            ? `Soporte continuo y asistencia - Mes ${month}`
-            : `Ongoing support and assistance - Month ${month}`
-        });
+        milestoneNames.push(language === 'Spanish' ? `Soporte - Mes ${month}` : `Support - Month ${month}`);
       }
     }
 
-    // Add project metadata row at the top
-    const projectData = [{
-      'Display Name': responses.project_name,
+    // Build CSV rows in Odoo format
+    // First row: Project data + first milestone
+    const rows = [];
+    const firstRow = {
+      'Display Name': responses.project_name || '',
       'Customer': responses.client_name || '',
-      'Industry': responses.industry || '',
-      'Country': responses.country || '',
+      'Company': '', // Empty as per Odoo format
       'Project Manager': responses.project_manager || '',
+      'Last Update Status': 'Set Status', // Default value
+      'Milestone': milestoneNames[0] || '',
+      'Status': '', // Empty as per Odoo format
       'Start Date': responses.project_start_date || '',
-      'Project Deadline': responses.project_deadline || '',
-      'Total Hours': generatedPlan.tasks.reduce((sum, t) => sum + (t.allocated_hours || 0), 0),
-      'Total Tasks': generatedPlan.tasks.filter(t => !deletedTaskIds.has(t.id)).length
-    }];
+      'Expiration Date': responses.project_deadline || '',
+      'Allocated Time': totalHours
+    };
+    rows.push(firstRow);
 
-    const csv = Papa.unparse(projectData) + '\n\nMILESTONES:\n' + Papa.unparse(milestones);
+    // Additional rows: Only milestone names (all other fields empty)
+    for (let i = 1; i < milestoneNames.length; i++) {
+      rows.push({
+        'Display Name': '',
+        'Customer': '',
+        'Company': '',
+        'Project Manager': '',
+        'Last Update Status': '',
+        'Milestone': milestoneNames[i],
+        'Status': '',
+        'Start Date': '',
+        'Expiration Date': '',
+        'Allocated Time': ''
+      });
+    }
+
+    const csv = Papa.unparse(rows);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);

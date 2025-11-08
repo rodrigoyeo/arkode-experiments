@@ -63,11 +63,13 @@
           "type": "select",
           "required": false,
           "options": [
-            "Luis Muñoz",
-            "Ricardo Gomez",
-            "Andres Solorzano",
-            "Josue Torres",
-            "Jose Ruvalcaba"
+            "Luis Angel Muñoz Zermeño",
+            "Jose Ricardo Gomez Duran",
+            "Josué Isaías Torres Gonzalez",
+            "José De Jesus Ruvalcaba Luna",
+            "Rodrigo Yeo",
+            "Martin Zollneritsch",
+            "Salvador Perez Barrera"
           ],
           "help_text": "Select the project manager from your team"
         },
@@ -77,11 +79,13 @@
           "type": "multiselect",
           "required": false,
           "options": [
-            {"value": "Luis Muñoz", "label": "Luis Muñoz", "description": "Process Consultant", "role": "Process Consultant"},
-            {"value": "Ricardo Gomez", "label": "Ricardo Gomez", "description": "Process Consultant", "role": "Process Consultant"},
-            {"value": "Andres Solorzano", "label": "Andres Solorzano", "description": "Process Consultant", "role": "Process Consultant"},
-            {"value": "Josue Torres", "label": "Josue Torres", "description": "Process Consultant", "role": "Process Consultant"},
-            {"value": "Jose Ruvalcaba", "label": "Jose Ruvalcaba", "description": "Odoo Developer", "role": "Odoo Developer"}
+            {"value": "Luis Angel Muñoz Zermeño", "label": "Luis Angel Muñoz Zermeño", "description": "Process Consultant", "role": "Process Consultant"},
+            {"value": "Jose Ricardo Gomez Duran", "label": "Jose Ricardo Gomez Duran", "description": "Process Consultant", "role": "Process Consultant"},
+            {"value": "Josué Isaías Torres Gonzalez", "label": "Josué Isaías Torres Gonzalez", "description": "Process Consultant", "role": "Process Consultant"},
+            {"value": "José De Jesus Ruvalcaba Luna", "label": "José De Jesus Ruvalcaba Luna", "description": "Odoo Developer", "role": "Odoo Developer"},
+            {"value": "Rodrigo Yeo", "label": "Rodrigo Yeo", "description": "CEO", "role": "CEO"},
+            {"value": "Martin Zollneritsch", "label": "Martin Zollneritsch", "description": "Process Consultant", "role": "Process Consultant"},
+            {"value": "Salvador Perez Barrera", "label": "Salvador Perez Barrera", "description": "Process Consultant", "role": "Process Consultant"}
           ],
           "help_text": "Select team members who will work on this project"
         },
